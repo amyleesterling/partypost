@@ -24,11 +24,13 @@ const NO_LINES = [
 export function RsvpForm({
   slug,
   scriptUrl,
+  isDemo,
   initial,
   editToken,
 }: {
   slug: string;
-  scriptUrl: string;
+  scriptUrl?: string;
+  isDemo?: boolean;
   initial?: RsvpRecord;
   editToken?: string;
 }) {
@@ -111,6 +113,15 @@ export function RsvpForm({
   const onSubmit: SubmitHandler<RsvpOutput> = async (values) => {
     setSubmitError(null);
     try {
+      if (isDemo) {
+        // Demo party: don't talk to any backend, just advance to a fake
+        // thanks page so visitors can see the full happy-path UI.
+        router.push(`/party/${slug}/rsvp/thanks?demo=1`);
+        return;
+      }
+      if (!scriptUrl) {
+        throw new Error("This party isn't connected to a backend yet.");
+      }
       if (isEdit && editToken) {
         await editRsvp(scriptUrl, editToken, values);
         setSavedFlash(true);

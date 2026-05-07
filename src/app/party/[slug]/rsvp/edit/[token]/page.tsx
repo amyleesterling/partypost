@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { findParty } from "@/config/parties";
 import { fetchPartyOnly, fetchRsvpByToken } from "@/lib/sheets";
@@ -11,6 +11,9 @@ export default async function EditRsvpPage({ params }: { params: Promise<Params>
   const { slug, token } = await params;
   const entry = findParty(slug);
   if (!entry) notFound();
+
+  // Demo party has no real RSVPs to edit — bounce back to the party page.
+  if (entry.fixture || !entry.scriptUrl) redirect(`/party/${slug}`);
 
   let party;
   let rsvp;

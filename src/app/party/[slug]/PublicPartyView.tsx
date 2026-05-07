@@ -14,11 +14,13 @@ import { RisingBubbles } from "./RisingBubbles";
 export function PublicPartyView({
   slug,
   scriptUrl,
+  isDemo,
   party,
   notes,
 }: {
   slug: string;
-  scriptUrl: string;
+  scriptUrl?: string;
+  isDemo?: boolean;
   party: PartyData;
   notes: PublicNote[];
 }) {
@@ -74,7 +76,7 @@ export function PublicPartyView({
             <span aria-hidden className="pp-wiggle inline-block text-2xl">🎉</span>
           </h2>
           <div className="mt-6">
-            <RsvpForm slug={slug} scriptUrl={scriptUrl} />
+            <RsvpForm slug={slug} scriptUrl={scriptUrl} isDemo={isDemo} />
           </div>
         </section>
 
@@ -152,8 +154,25 @@ export function PublicPartyView({
         <section className="mt-8">
           <span className="pp-section-rule" />
           <h2 className="mb-4 text-2xl font-bold tracking-tight">Birthday wishes</h2>
-          <NoteWall scriptUrl={scriptUrl} notes={notes} />
+          <NoteWall scriptUrl={scriptUrl} isDemo={isDemo} notes={notes} />
         </section>
+
+        {isDemo && (
+          <div className="mt-6 rounded-2xl bg-white/85 px-5 py-4 text-center text-sm font-medium text-zinc-700 shadow-sm">
+            ✨ This is a public PartyPost demo. RSVPs and wishes here aren&apos;t saved.
+            <br />
+            Fork the repo to make your own:{" "}
+            <a
+              href="https://github.com/amyleesterling/partypost"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline-offset-4 hover:underline"
+              style={{ color: "var(--accent)" }}
+            >
+              github.com/amyleesterling/partypost
+            </a>
+          </div>
+        )}
 
         <footer className="mt-12 text-center text-xs pp-muted">
           🔒 This page is unlisted. Only people with the link can see it.

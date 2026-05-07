@@ -8,7 +8,7 @@ import { ThanksView } from "./ThanksView";
 import { ThanksCopyButton } from "./ThanksCopyButton";
 
 type Params = { slug: string };
-type SearchParams = Promise<{ t?: string }>;
+type SearchParams = Promise<{ t?: string; demo?: string }>;
 
 export default async function ThanksPage({
   params,
@@ -18,14 +18,21 @@ export default async function ThanksPage({
   searchParams: SearchParams;
 }) {
   const { slug } = await params;
-  const { t: token } = await searchParams;
+  const { t: token, demo } = await searchParams;
   const entry = findParty(slug);
   if (!entry) notFound();
+  const isDemo = !!entry.fixture || demo === "1";
 
   let party;
-  try {
-    party = await fetchPartyOnly(entry.scriptUrl);
-  } catch {
+  if (entry.fixture) {
+    party = entry.fixture.party;
+  } else if (entry.scriptUrl) {
+    try {
+      party = await fetchPartyOnly(entry.scriptUrl);
+    } catch {
+      notFound();
+    }
+  } else {
     notFound();
   }
 
@@ -64,6 +71,14 @@ export default async function ThanksPage({
                   Save this magic link — it lets you update your RSVP later without making an account.
                 </p>
                 <ThanksCopyButton path={editPath} />
+              </div>
+            )}
+
+            {isDemo && (
+              <div className="mt-6 rounded-2xl bg-white/85 p-4 text-left text-sm text-zinc-700">
+                ✨ This is a demo. Your RSVP wasn&apos;t saved anywhere — but the
+                real version sends a beautiful confirmation email with the
+                invite art, calendar links, and a magic edit link.
               </div>
             )}
 

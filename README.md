@@ -2,7 +2,7 @@
 
 A **FREE** Paperless-Post-style invite site for kids' birthday parties. Each party gets a beautiful page; RSVPs land in a Google Sheet you own. No monthly bill. No accounts for guests.
 
-**Live demo:** [partypost.vercel.app/party/sophia-7](https://partypost.vercel.app/party/sophia-7)
+**Live demo:** [partypost.vercel.app/party/demo](https://partypost.vercel.app/party/demo)
 
 ## How to use it
 

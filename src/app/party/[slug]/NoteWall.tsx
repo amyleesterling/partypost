@@ -5,9 +5,11 @@ import { submitNote, type PublicNote } from "@/lib/sheets";
 
 export function NoteWall({
   scriptUrl,
+  isDemo,
   notes,
 }: {
-  scriptUrl: string;
+  scriptUrl?: string;
+  isDemo?: boolean;
   notes: PublicNote[];
 }) {
   const [showForm, setShowForm] = useState(false);
@@ -26,7 +28,13 @@ export function NoteWall({
     }
     setSubmitting(true);
     try {
-      await submitNote(scriptUrl, { display_name: name, message });
+      if (isDemo) {
+        await new Promise((r) => setTimeout(r, 400));
+      } else if (scriptUrl) {
+        await submitNote(scriptUrl, { display_name: name, message });
+      } else {
+        throw new Error("This party isn't connected to a backend yet.");
+      }
       setSubmitted(true);
       setName("");
       setMessage("");

@@ -14,14 +14,22 @@ export default async function PublicPartyPage({ params }: { params: Promise<Para
   const entry = findParty(slug);
   if (!entry) notFound();
 
-  let bundle;
-  try {
-    bundle = await fetchPartyBundle(entry.scriptUrl);
-  } catch {
+  let party;
+  let notes;
+  if (entry.fixture) {
+    party = entry.fixture.party;
+    notes = entry.fixture.notes;
+  } else if (entry.scriptUrl) {
+    try {
+      const bundle = await fetchPartyBundle(entry.scriptUrl);
+      party = bundle.party;
+      notes = bundle.notes;
+    } catch {
+      notFound();
+    }
+  } else {
     notFound();
   }
-
-  const { party, notes } = bundle;
   const baseTheme = getTheme(party.theme);
 
   // Auto-derive theme colors from the banner (or hero) image. Falls through
@@ -29,7 +37,7 @@ export default async function PublicPartyPage({ params }: { params: Promise<Para
   const sourceImage = party.banner_image_url || party.hero_image_url;
   let theme: ThemeTokens = baseTheme;
   if (sourceImage) {
-    const url = absoluteUrl(sourceImage, entry.scriptUrl);
+    const url = absoluteUrl(sourceImage);
     const palette = await extractPaletteFromUrl(url);
     theme = { ...baseTheme, ...applyPaletteOverride(baseTheme, palette) };
   }
@@ -39,6 +47,7 @@ export default async function PublicPartyPage({ params }: { params: Promise<Para
       <PublicPartyView
         slug={slug}
         scriptUrl={entry.scriptUrl}
+        isDemo={!!entry.fixture}
         party={party}
         notes={notes}
       />
@@ -46,9 +55,8 @@ export default async function PublicPartyPage({ params }: { params: Promise<Para
   );
 }
 
-function absoluteUrl(url: string, _scriptUrl: string): string {
+function absoluteUrl(url: string): string {
   if (/^https?:\/\//i.test(url)) return url;
-  // Site-relative URL like /sophia-7-invite.png — resolve against the site origin.
   const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://partypost.vercel.app").replace(/\/$/, "");
   return base + (url.startsWith("/") ? url : "/" + url);
 }
