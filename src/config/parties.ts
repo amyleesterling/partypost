@@ -26,7 +26,7 @@ const DEMO_FIXTURE: PartyFixture = {
     birthday_age: 8,
     party_title: "Oliver Twist's Pirate Birthday Party",
     description:
-      "Ahoy! Come celebrate Oliver Twist&apos;s 8th birthday with a swashbuckling afternoon of treasure hunts, snacks, and far too much cake. This is a public PartyPost demo — fork the repo to make your own.",
+      "Ahoy! Come celebrate Oliver Twist's 8th birthday with a swashbuckling afternoon of treasure hunts, snacks, and far too much cake. This is a public PartyPost demo — fork the repo to make your own.",
     date: "2026-05-31",
     start_time: "13:00",
     end_time: "16:00",
@@ -40,7 +40,7 @@ const DEMO_FIXTURE: PartyFixture = {
     host_phone: null,
     gift_note: "No gifts please — bring your most fearsome pirate name.",
     food_note: "Treasure-chest sandwiches, fruit cannons, and a rum-cake (kid version)",
-    rain_plan: "We&apos;ll move belowdecks (the indoor pavilion) if the weather mutinies.",
+    rain_plan: "We'll move belowdecks (the indoor pavilion) if the weather mutinies.",
     theme: "beach",
     hero_image_url: "/demo-banner.png",
     banner_image_url: "/demo-banner.png",
@@ -56,7 +56,7 @@ const DEMO_FIXTURE: PartyFixture = {
     {
       id: "demo-2",
       display_name: "Tinkerbell",
-      message: "✨ Eight is a very magical number. Trust me, I&apos;ve counted.",
+      message: "✨ Eight is a very magical number. Trust me, I've counted.",
       created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     },
   ],
