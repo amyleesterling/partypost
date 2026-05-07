@@ -7,11 +7,11 @@ export interface PartyEntry {
 }
 
 export const PARTIES: PartyEntry[] = [
-  // Example:
-  // {
-  //   slug: "sophia-7",
-  //   scriptUrl: "https://script.google.com/macros/s/AKfy.../exec",
-  // },
+  {
+    slug: "sophia-7",
+    scriptUrl:
+      "https://script.google.com/macros/s/AKfycbz3cDmGpPmcIESHovbNnWJWE2cgU_4rGfeJTRks0a5EyuV5DMgIkNxDoQnqc12JfFpF/exec",
+  },
 ];
 
 export function findParty(slug: string): PartyEntry | undefined {
