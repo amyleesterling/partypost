@@ -1,8 +1,10 @@
 # PartyPost
 
-A tiny, cheerful birthday-party invitation + RSVP site. Each party = one Google Sheet (your "database") + one Google Apps Script web app (your "API") + one entry in `src/config/parties.ts`. Guests RSVP without signing in. You see RSVPs by opening the Sheet.
+A tiny, FREE cheerful birthday-party invitation + RSVP site. Each party = one Google Sheet (your "database") + one Google Apps Script web app (your "API") + one entry in `src/config/parties.ts`. Guests RSVP without signing in. You see RSVPs by opening the Sheet.
 
-Built for managing kids' birthday parties — not a SaaS. No accounts, no Postgres, no monthly bill.
+This effectively replaces Paperless Post for personal use.
+
+Built for managing kids' birthday parties — not a SaaS. No accounts, no bill, powered by free tier Google Drive.
 
 ## Stack
 
