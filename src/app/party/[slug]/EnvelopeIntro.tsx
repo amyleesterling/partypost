@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-type Phase = "closed" | "opening" | "done";
+type Phase = "closed" | "opening" | "settled" | "exiting" | "done";
 
 const SESSION_KEY = "pp-envelope-seen";
 
@@ -18,6 +18,7 @@ export function EnvelopeIntro({
   inviteImageUrl?: string | null;
 }) {
   const [phase, setPhase] = useState<Phase | null>(null);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let seen = false;
@@ -29,6 +30,12 @@ export function EnvelopeIntro({
     setPhase(seen ? "done" : "closed");
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (settleTimer.current) clearTimeout(settleTimer.current);
+    };
+  }, []);
+
   function open() {
     if (phase !== "closed") return;
     setPhase("opening");
@@ -37,30 +44,44 @@ export function EnvelopeIntro({
     } catch {
       /* ignore */
     }
-    setTimeout(() => setPhase("done"), 2300);
+    // Card animation lasts ~1.8s (0.5s delay + 1.3s emerge + rotate + zoom).
+    settleTimer.current = setTimeout(() => setPhase("settled"), 1900);
+  }
+
+  function dismiss() {
+    setPhase("exiting");
+    setTimeout(() => setPhase("done"), 500);
   }
 
   if (phase === null || phase === "done") return null;
 
   const dateLabel = formatDateForCard(date);
+  const isClosed = phase === "closed";
 
   return (
     <div
       className={`pp-env-overlay pp-env-${phase}`}
-      role="button"
-      tabIndex={0}
-      aria-label={`Open invitation for ${partyTitle}`}
-      onClick={open}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          open();
-        }
-      }}
+      role={isClosed ? "button" : undefined}
+      tabIndex={isClosed ? 0 : undefined}
+      aria-label={isClosed ? `Open invitation for ${partyTitle}` : undefined}
+      onClick={isClosed ? open : undefined}
+      onKeyDown={
+        isClosed
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                open();
+              }
+            }
+          : undefined
+      }
     >
       <div className="pp-env-stage">
         <div className="pp-env">
           <div className="pp-env-back" />
+          <div className="pp-env-side-flap pp-env-side-flap-left" />
+          <div className="pp-env-side-flap pp-env-side-flap-right" />
+          <div className="pp-env-bottom-flap" />
           <div className="pp-env-card">
             {inviteImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -88,11 +109,25 @@ export function EnvelopeIntro({
               </div>
             )}
           </div>
-          <div className="pp-env-front" />
           <div className="pp-env-flap" />
-          <div className="pp-env-seal" aria-hidden="true">✨</div>
+          {isClosed && (
+            <div className="pp-env-seal" aria-hidden="true">✨</div>
+          )}
         </div>
-        <div className="pp-env-hint" aria-hidden="true">Tap to open</div>
+
+        {isClosed && (
+          <div className="pp-env-hint" aria-hidden="true">Tap to open</div>
+        )}
+
+        {phase === "settled" && (
+          <button
+            type="button"
+            className="pp-env-rsvp-btn pp-env-rsvp-enter"
+            onClick={dismiss}
+          >
+            RSVP →
+          </button>
+        )}
       </div>
     </div>
   );
