@@ -6,6 +6,16 @@ A **FREE** Paperless-Post-style invite site for kids' birthday parties. Each par
 
 You don't need to be a developer. Open this repo in any AI assistant (Claude Code, ChatGPT, Cursor, etc.) and follow the two steps below.
 
+## Before you begin
+
+To use this, you'll need three free accounts (none of them charge a cent for what we're doing):
+
+- **[Google Drive](https://drive.google.com)** — every party needs a new Google spreadsheet that serves as the database for RSVPs.
+- **[Vercel](https://vercel.com)** — hosts your party page on the public internet, free tier.
+- **[GitHub](https://github.com)** — where the code lives. You'll fork this repo so you have your own copy.
+
+Sign up for any you don't already have before kicking off Step 1 — your AI assistant will walk you through using all three.
+
 ---
 
 ## Step 1 — Set up the site
@@ -24,8 +34,6 @@ Location: [LOCATION]
 ```
 
 The AI will walk you through forking the repo, deploying on Vercel, creating the Google Sheet for your party, and wiring it all together. **~1 hour for the first party, ~10 minutes for each one after.**
-
-You'll need: a Google account, a free [GitHub](https://github.com) account, a free [Vercel](https://vercel.com) account.
 
 Click-by-click reference: [`apps-script/SETUP.md`](apps-script/SETUP.md).
 
