@@ -132,8 +132,22 @@ function doPost(e) {
     if (action === 'submitRsvp')  return submitRsvp_(body.data || {}, body.siteUrl || '', body.slug || '', body.inviteToken || '');
     if (action === 'submitNote')  return submitNote_(body.data || {});
     if (action === 'editRsvp')    return editRsvp_(body.token, body.data || {});
+    // Admin actions — all require a matching ADMIN_KEY script property.
+    if (action === 'adminListInvitations') return adminListInvitations_(body.key || '');
+    if (action === 'adminAddInvitees')     return adminAddInvitees_(body.key || '', body.invitees || []);
+    if (action === 'adminSendPending')     return adminSendPending_(body.key || '');
     throw new Error('Unknown POST action: ' + action);
   });
+}
+
+function _checkAdminKey_(provided) {
+  const expected = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
+  if (!expected) {
+    throw new Error("Admin not configured. Set ADMIN_KEY in Project Settings → Script properties.");
+  }
+  if (String(provided || '') !== expected) {
+    throw new Error("Wrong password.");
+  }
 }
 
 function handle_(fn) {

@@ -21,11 +21,18 @@ export function EnvelopeIntro({
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // ?envelope=1 forces the envelope to show even if seen already this
+    // session. Useful for testing / iterating on the animation.
+    const forced =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("envelope") === "1";
     let seen = false;
-    try {
-      seen = sessionStorage.getItem(SESSION_KEY) === "1";
-    } catch {
-      /* private mode etc. */
+    if (!forced) {
+      try {
+        seen = sessionStorage.getItem(SESSION_KEY) === "1";
+      } catch {
+        /* private mode etc. */
+      }
     }
     setPhase(seen ? "done" : "closed");
   }, []);

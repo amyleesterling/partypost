@@ -38,7 +38,7 @@ const DEMO_FIXTURE: PartyFixture = {
     host_name: "The Crew",
     host_email: null,
     host_phone: null,
-    gift_note: "No gifts please — bring your most fearsome pirate name.",
+    gift_note: null,
     food_note: "Treasure-chest sandwiches, fruit cannons, and a rum-cake (kid version)",
     rain_plan: "We'll move belowdecks (the indoor pavilion) if the weather mutinies.",
     theme: "beach",
