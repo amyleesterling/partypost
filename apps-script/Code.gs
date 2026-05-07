@@ -148,19 +148,33 @@ function readSettings_(ss) {
   rows.forEach(function (r) {
     const key = String(r[0] || '').trim();
     if (!key) return;
-    const raw = r[1];
-    out[key] = raw instanceof Date ? Utilities.formatDate(raw, 'UTC', 'yyyy-MM-dd') : raw;
+    out[key] = r[1]; // keep raw Date objects for per-key formatting below
   });
-  // Coerce numbers where it matters.
+
+  const tz = ss.getSpreadsheetTimeZone() || 'America/New_York';
+
+  // Date-only fields → YYYY-MM-DD
+  ['date', 'rsvp_deadline'].forEach(function (k) {
+    const v = out[k];
+    if (v instanceof Date) out[k] = Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+  });
+
+  // Time-only fields → HH:MM. Sheets stores time-only cells as Dates anchored
+  // at 1899-12-30, so we format with the spreadsheet TZ rather than slicing.
+  ['start_time', 'end_time'].forEach(function (k) {
+    const v = out[k];
+    if (v instanceof Date) out[k] = Utilities.formatDate(v, tz, 'HH:mm');
+    else if (typeof v === 'string' && /^\d{1,2}:\d{2}/.test(v)) out[k] = v.slice(0, 5);
+  });
+
+  // Stringify any other unexpected Date so JSON.stringify doesn't drop type info.
+  Object.keys(out).forEach(function (k) {
+    if (out[k] instanceof Date) out[k] = Utilities.formatDate(out[k], tz, 'yyyy-MM-dd');
+  });
+
   if (out.birthday_age !== undefined && out.birthday_age !== '') {
     out.birthday_age = Number(out.birthday_age);
   }
-  // Coerce time-only fields to HH:MM string if Sheets returned a Date object.
-  ['start_time', 'end_time'].forEach(function (k) {
-    const v = out[k];
-    if (v instanceof Date) out[k] = Utilities.formatDate(v, ss.getSpreadsheetTimeZone(), 'HH:mm');
-    else if (typeof v === 'string' && v.length > 5) out[k] = v.slice(0, 5);
-  });
   return out;
 }
 
