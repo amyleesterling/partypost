@@ -4,17 +4,68 @@ A **FREE** Paperless-Post-style invite site for kids' birthday parties. Each par
 
 **Live demo:** [partypost.vercel.app/party/demo](https://partypost.vercel.app/party/demo)
 
-## How to use it
+You don't need to be a developer. Open this repo in any AI assistant (Claude Code, ChatGPT, Cursor, etc.) and follow the two steps below.
 
-You don't need to be a developer. Open this repo in any AI assistant (Claude, ChatGPT, Cursor) and say:
+---
 
-> *"Help me set up PartyPost for my kid's birthday. [Name] is turning [age] on [date] at [place]. Banner image is at [path]."*
+## Step 1 — Set up the site
 
-The AI walks you through forking the repo, deploying on Vercel, creating the Google Sheet, and adding the party. **~1 hour for the first party, ~10 minutes for each one after.**
+Copy this into your AI assistant with your own party details:
 
-You need: a Google account, a free [GitHub](https://github.com) account, a free [Vercel](https://vercel.com) account.
+```
+Use this repository to make my kid's birthday party invitation:
+https://github.com/amyleesterling/partypost/tree/main
 
-Click-by-click setup: [`apps-script/SETUP.md`](apps-script/SETUP.md).
+Child's name: [CHILD NAME]
+Age: [AGE]
+Date: [DATE]
+Time: [TIME]
+Location: [LOCATION]
+```
+
+The AI will walk you through forking the repo, deploying on Vercel, creating the Google Sheet for your party, and wiring it all together. **~1 hour for the first party, ~10 minutes for each one after.**
+
+You'll need: a Google account, a free [GitHub](https://github.com) account, a free [Vercel](https://vercel.com) account.
+
+Click-by-click reference: [`apps-script/SETUP.md`](apps-script/SETUP.md).
+
+---
+
+## Step 2 — Generate a banner image
+
+Use this prompt with any AI image generator (ChatGPT, Gemini, Midjourney, etc.). Fill in your details and pick a theme:
+
+```
+Create a birthday party invitation banner in a bright, cheerful
+children's party style.
+
+Use this party information:
+Child's name: [CHILD NAME]
+Age: [AGE]
+Date: [DATE]
+Time: [TIME]
+Location: [LOCATION]
+
+Theme: [e.g. "pirates" — or a longer custom description with
+        specific elements and colors]
+Favorite colors: [e.g. "pink, purple, gold"]
+
+Design style:
+Make it colorful, playful, and festive, with big glossy sticker-like
+lettering, rounded shapes, cheerful party decorations, balloons,
+bunting flags, confetti, and cute theme-related objects. Use bright
+colors, soft shadows, thick outlines, and a polished children's
+party invitation look.
+
+Layout:
+Put the title and party details near the center so they are easy to
+read. Do not make the design too cluttered. Make all text large,
+clear, and spelled correctly. Keep it cute, happy, and kid-friendly.
+```
+
+Save the generated image into the repo at `public/<your-slug>-banner.png`, then tell your AI to use it as the party banner.
+
+---
 
 ## Where the data lives
 
@@ -22,4 +73,4 @@ Your Google Sheet's **RSVPs** tab. Sort, filter, export to CSV — all native. E
 
 ## Make it yours
 
-Ask your AI to swap the banner, change colors, tweak wording, add a section. [`AGENTS.md`](AGENTS.md) tells the AI the rules of the road for this codebase.
+Ask your AI to swap the banner, change colors, tweak wording, add a section. [`AGENTS.md`](AGENTS.md) tells the AI the rules of the road for this codebase so suggestions stay aligned with the design (no auth, no admin, no Postgres — just one Sheet per party).
