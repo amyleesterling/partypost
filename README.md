@@ -71,7 +71,7 @@ read. Do not make the design too cluttered. Make all text large,
 clear, and spelled correctly. Keep it cute, happy, and kid-friendly.
 ```
 
-Save the generated image into the repo at `public/<your-slug>-banner.png`, then tell your AI to use it as the party banner.
+Save the generated image, then tell your AI to use it as the party banner.
 
 ---
 
