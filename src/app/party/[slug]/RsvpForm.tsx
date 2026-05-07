@@ -9,12 +9,16 @@ import { rsvpSchema, type RsvpInput, type RsvpOutput } from "@/lib/validation";
 import { editRsvp, submitRsvp, type RsvpRecord } from "@/lib/sheets";
 
 const NO_LINES = [
-  "🧁 Aw, more cupcakes for us!",
   "🥺 We&rsquo;ll miss you — saving you some frosting.",
   "💔 Boooo. We&rsquo;ll send pics of the chaos.",
   "🎈 Extra balloons for everyone else, then.",
   "👀 You sure? There will be pizza.",
-  "🦀 The crab on the invite is sad now.",
+  "🦆 Aw, the duck on the invite is sad now.",
+  "🌞 The sun on the invite is also sad.",
+  "🧚 The snack-counting fairies are leaving a passive-aggressive note.",
+  "🎂 Sophia just sighed. Just so you know.",
+  "🥹 We respect this. Cake is a journey.",
+  "🌊 The reservoir waves will whisper your name.",
 ];
 
 export function RsvpForm({
