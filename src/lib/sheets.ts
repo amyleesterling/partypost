@@ -23,6 +23,10 @@ export interface PartyData {
   rain_plan: string | null;
   theme: ThemeKey | string;
   hero_image_url: string | null;
+  /** Optional landscape banner used on the party page hero. Falls back to
+      hero_image_url if not set. The thanks page always uses hero_image_url
+      (typically the portrait invite). */
+  banner_image_url?: string | null;
   profile_image_url: string | null;
 }
 

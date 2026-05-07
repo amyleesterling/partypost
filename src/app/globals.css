@@ -25,12 +25,22 @@ body {
   min-height: 100%;
   /* fixed background so motifs scroll past */
   background-attachment: fixed;
+  /* Establish a stacking context so fixed -z-10 children (bubbles, motif
+     emoji) paint above the gradient background but below the cards. */
+  isolation: isolate;
+  position: relative;
+}
+
+.themed .pp-card {
+  position: relative;
+  z-index: 1;
 }
 
 .themed h1,
 .themed h2,
 .themed h3 {
   font-family: var(--heading-font);
+  color: var(--heading);
   letter-spacing: -0.015em;
   line-height: 1.1;
 }
@@ -166,6 +176,15 @@ body {
   75% { transform: translate(var(--pp-drift, 8px), 12px) rotate(8deg); }
 }
 
+/* Rising bubbles — float from below the viewport up and out the top */
+@keyframes pp-rise {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  10%  { opacity: var(--pp-bubble-opacity, 0.35); }
+  50%  { transform: translate(calc(var(--pp-bubble-drift, 0px) * 0.5), -55vh); }
+  90%  { opacity: var(--pp-bubble-opacity, 0.35); }
+  100% { transform: translate(var(--pp-bubble-drift, 0px), -110vh); opacity: 0; }
+}
+
 .pp-wiggle {
   display: inline-block;
   animation: pp-wiggle 2.4s ease-in-out infinite;
@@ -184,5 +203,6 @@ body {
   .pp-wiggle,
   .pp-bob,
   .pp-pop { animation: none; }
-  [style*="pp-float"] { animation: none !important; }
+  [style*="pp-float"],
+  .pp-bubble { animation: none !important; }
 }

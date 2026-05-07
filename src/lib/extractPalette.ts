@@ -75,13 +75,13 @@ export function applyPaletteOverride(
   override: PaletteOverride | null,
 ) {
   if (!override) return base;
-  // Keep the theme's background (sky-blue for beach, etc.) — only swap in
-  // the image-derived accent, secondary, and text tones.
+  // Keep the theme's background AND text colors. Only let the image drive
+  // the accent (RSVP button, links) and secondary (badges). Body text in
+  // particular should stay in the theme's blue/navy range so it never reads
+  // as purple from a pink-heavy invite.
   return {
     ...base,
     accent: override.accent,
     secondary: override.secondary,
-    ink: override.ink,
-    mutedInk: override.mutedInk,
   };
 }

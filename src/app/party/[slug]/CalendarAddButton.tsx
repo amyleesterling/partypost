@@ -1,11 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { PartyData } from "@/lib/sheets";
 import { googleCalendarUrl, partyToIcs } from "@/lib/ics";
 
 export function CalendarAddButton({ slug, party }: { slug: string; party: PartyData }) {
-  const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const [siteUrl, setSiteUrl] = useState<string>("");
+
+  useEffect(() => {
+    setSiteUrl(window.location.origin);
+  }, []);
+
   const icsParty = useMemo(
     () => ({
       slug,
@@ -19,7 +24,10 @@ export function CalendarAddButton({ slug, party }: { slug: string; party: PartyD
     }),
     [slug, party],
   );
-  const gcal = useMemo(() => googleCalendarUrl(icsParty, siteUrl), [icsParty, siteUrl]);
+  const gcal = useMemo(
+    () => (siteUrl ? googleCalendarUrl(icsParty, siteUrl) : ""),
+    [icsParty, siteUrl],
+  );
   const icsContent = useMemo(() => partyToIcs(icsParty), [icsParty]);
 
   if (!party.date) return null;
@@ -36,7 +44,9 @@ export function CalendarAddButton({ slug, party }: { slug: string; party: PartyD
 
   return (
     <>
-      {gcal && (
+      {/* Render the Google Calendar link only after mount, so the href matches
+          between server and client (server has no window.location.origin). */}
+      {gcal ? (
         <a
           href={gcal}
           target="_blank"
@@ -45,6 +55,13 @@ export function CalendarAddButton({ slug, party }: { slug: string; party: PartyD
         >
           📅 Add to Google Calendar
         </a>
+      ) : (
+        <span
+          className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-sm opacity-60"
+          aria-hidden="true"
+        >
+          📅 Add to Google Calendar
+        </span>
       )}
       <button
         type="button"

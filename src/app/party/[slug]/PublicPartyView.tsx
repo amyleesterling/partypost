@@ -8,21 +8,19 @@ import { NoteWall } from "./NoteWall";
 import { CalendarAddButton } from "./CalendarAddButton";
 import { StickyRsvpBar } from "./StickyRsvpBar";
 import { Countdown } from "./Countdown";
-import { FloatingMotif } from "./FloatingMotif";
 import { IdleConfetti } from "./IdleConfetti";
+import { RisingBubbles } from "./RisingBubbles";
 
 export function PublicPartyView({
   slug,
   scriptUrl,
   party,
   notes,
-  themeKey,
 }: {
   slug: string;
   scriptUrl: string;
   party: PartyData;
   notes: PublicNote[];
-  themeKey: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -39,24 +37,29 @@ export function PublicPartyView({
 
   return (
     <>
-      <FloatingMotif themeKey={themeKey} />
+      <RisingBubbles />
       <IdleConfetti />
 
       <main className="relative mx-auto max-w-2xl px-4 pt-8 pb-32 sm:px-6 sm:pt-10">
         {/* HERO — invite art at full natural aspect, framed by a soft card */}
-        <div className="pp-card overflow-hidden">
-          {party.hero_image_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={party.hero_image_url}
-              alt={party.party_title}
-              className="block w-full h-auto"
-            />
-          )}
-          <div className="px-6 pb-6 pt-5 sm:px-8 sm:pb-7">
-            <Countdown date={party.date} startTime={party.start_time} />
-          </div>
-        </div>
+        {(() => {
+          const heroSrc = party.banner_image_url || party.hero_image_url;
+          return (
+            <div className="pp-card overflow-hidden">
+              {heroSrc && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={heroSrc}
+                  alt={party.party_title}
+                  className="block w-full h-auto"
+                />
+              )}
+              <div className="px-6 pb-6 pt-5 sm:px-8 sm:pb-7">
+                <Countdown date={party.date} startTime={party.start_time} />
+              </div>
+            </div>
+          );
+        })()}
 
         {/* RSVP — leads with the description, then the form */}
         <section id="rsvp" className="mt-8 pp-card px-6 py-7 sm:px-8 sm:py-8">

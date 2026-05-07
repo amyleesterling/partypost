@@ -24,12 +24,13 @@ export default async function PublicPartyPage({ params }: { params: Promise<Para
   const { party, notes } = bundle;
   const baseTheme = getTheme(party.theme);
 
-  // Auto-derive theme colors from the hero image (if any). Falls through to
-  // the static theme if extraction fails.
+  // Auto-derive theme colors from the banner (or hero) image. Falls through
+  // to the static theme if extraction fails.
+  const sourceImage = party.banner_image_url || party.hero_image_url;
   let theme: ThemeTokens = baseTheme;
-  if (party.hero_image_url) {
-    const heroUrl = absoluteUrl(party.hero_image_url, entry.scriptUrl);
-    const palette = await extractPaletteFromUrl(heroUrl);
+  if (sourceImage) {
+    const url = absoluteUrl(sourceImage, entry.scriptUrl);
+    const palette = await extractPaletteFromUrl(url);
     theme = { ...baseTheme, ...applyPaletteOverride(baseTheme, palette) };
   }
 
@@ -40,7 +41,6 @@ export default async function PublicPartyPage({ params }: { params: Promise<Para
         scriptUrl={entry.scriptUrl}
         party={party}
         notes={notes}
-        themeKey={typeof party.theme === "string" ? party.theme : "default"}
       />
     </div>
   );

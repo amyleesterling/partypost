@@ -17,15 +17,33 @@ export function Countdown({
   startTime: string | null | undefined;
 }) {
   const target = partyEpoch(date, startTime);
-  const [now, setNow] = useState<number>(() => Date.now());
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
     if (!target) return;
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [target]);
 
   if (!target) return null;
+  // Render an empty shell on the server / during hydration so SSR and
+  // first client render match. Once mounted we tick every second.
+  if (now === null) {
+    return (
+      <div className="rounded-2xl bg-white/70 px-3 py-3 text-center backdrop-blur" suppressHydrationWarning>
+        <div className="text-[10px] font-semibold uppercase tracking-widest pp-muted">
+          Counting down
+        </div>
+        <div className="mt-1 grid grid-cols-4 gap-1 opacity-0">
+          <Cell n={0} label="days" />
+          <Cell n={0} label="hrs" />
+          <Cell n={0} label="min" />
+          <Cell n={0} label="sec" />
+        </div>
+      </div>
+    );
+  }
   const diff = target - now;
 
   if (diff <= -2 * 60 * 60 * 1000) {

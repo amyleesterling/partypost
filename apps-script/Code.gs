@@ -38,6 +38,7 @@ const SETTINGS_KEYS = [
   ['food_note',           'Pizza, fruit, and cupcakes'],
   ['rain_plan',           'We will text everyone by 9am if we need to move indoors.'],
   ['theme',               'beach'],
+  ['banner_image_url',    ''],
   ['hero_image_url',      ''],
   ['profile_image_url',   ''],
 ];

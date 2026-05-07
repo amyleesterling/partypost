@@ -22,6 +22,8 @@ export interface ThemeTokens {
   secondary: string;
   ink: string;
   mutedInk: string;
+  /** Color for h1/h2/h3. Defaults to ink if a theme doesn't set it. */
+  heading?: string;
   headingFont: string;
   bodyFont: string;
   buttonRadius: string;
@@ -52,8 +54,9 @@ export const THEMES: Record<ThemeKey, ThemeTokens> = {
     card: "#ffffff",
     accent: "#2F80ED",
     secondary: "#FFD166",
-    ink: "#0E3F5F",
-    mutedInk: "#5A7187",
+    ink: "#0B3A57",
+    mutedInk: "#3F6280",
+    heading: "#3B2A6B",
     headingFont: "var(--font-playful), 'Geist', system-ui, sans-serif",
     bodyFont: "var(--font-body), 'Geist', system-ui, sans-serif",
     buttonRadius: "9999px",
@@ -196,6 +199,7 @@ export function themeCssVars(theme: ThemeTokens): React.CSSProperties {
     ["--secondary" as string]: theme.secondary,
     ["--ink" as string]: theme.ink,
     ["--muted-ink" as string]: theme.mutedInk,
+    ["--heading" as string]: theme.heading || theme.ink,
     ["--heading-font" as string]: theme.headingFont,
     ["--body-font" as string]: theme.bodyFont,
     ["--button-radius" as string]: theme.buttonRadius,

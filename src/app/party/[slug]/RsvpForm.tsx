@@ -40,7 +40,9 @@ export function RsvpForm({
   } = useForm<RsvpInput, unknown, RsvpOutput>({
     resolver: zodResolver(rsvpSchema),
     defaultValues: {
-      status: (initial?.status === "no" ? "no" : "yes") as "yes" | "no",
+      // No pre-selection on a fresh visit — let the click trigger the
+      // confetti / "no" toast. For edits we restore the saved choice.
+      status: initial?.status as "yes" | "no" | undefined,
       parent_names: initial?.parent_names ?? "",
       email: initial?.email ?? "",
       phone: initial?.phone ?? "",
@@ -56,14 +58,11 @@ export function RsvpForm({
   const status = watch("status");
   const isEdit = !!editToken;
   const fieldsetRef = useRef<HTMLFieldSetElement>(null);
-  const prevStatusRef = useRef<"yes" | "no" | null>(null);
   const [noToast, setNoToast] = useState<string | null>(null);
   const noToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const prev = prevStatusRef.current;
-    prevStatusRef.current = status;
-    if (prev === null || prev === status) return;
+  function handleStatusChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -72,7 +71,7 @@ export function RsvpForm({
     const secondary = styles.getPropertyValue("--secondary").trim() || "#FFD166";
     const colors = [accent, secondary, "#ffffff"];
 
-    if (status === "yes") {
+    if (value === "yes") {
       const rect = fieldsetRef.current?.getBoundingClientRect();
       const origin = rect
         ? {
@@ -91,13 +90,13 @@ export function RsvpForm({
       });
       if (noToastTimer.current) clearTimeout(noToastTimer.current);
       setNoToast(null);
-    } else if (status === "no") {
+    } else if (value === "no") {
       const line = NO_LINES[Math.floor(Math.random() * NO_LINES.length)];
       setNoToast(line);
       if (noToastTimer.current) clearTimeout(noToastTimer.current);
       noToastTimer.current = setTimeout(() => setNoToast(null), 2800);
     }
-  }, [status]);
+  }
 
   useEffect(() => {
     return () => {
@@ -150,7 +149,12 @@ export function RsvpForm({
                   : undefined
               }
             >
-              <input type="radio" value={s} className="sr-only" {...register("status")} />
+              <input
+                type="radio"
+                value={s}
+                className="sr-only"
+                {...register("status", { onChange: handleStatusChange })}
+              />
               {s === "yes" && "✨ Yes!"}
               {s === "no" && "Can't make it"}
             </label>
