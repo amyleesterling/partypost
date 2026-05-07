@@ -39,7 +39,7 @@ const SETTINGS_KEYS = [
   ['rain_plan',           'We will text everyone by 9am if we need to move indoors.'],
   ['theme',               'beach'],
   ['banner_image_url',    ''],
-  ['hero_image_url',      ''],
+  ['invite_image_url',    ''],
   ['profile_image_url',   ''],
 ];
 
@@ -442,7 +442,7 @@ function escapeHtml_(s) {
 }
 
 function guestEmailHtml_(settings, data, partyUrl, editUrl, gcalUrl, mapsUrl) {
-  const heroImg = settings.hero_image_url || settings.banner_image_url || '';
+  const heroImg = settings.invite_image_url || settings.hero_image_url || settings.banner_image_url || '';
   const accent = '#2F80ED';
   const ink = '#0B3A57';
   const muted = '#3F6280';

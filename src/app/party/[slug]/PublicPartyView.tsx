@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { PartyData, PublicNote } from "@/lib/sheets";
+import { bannerImage, inviteImage } from "@/lib/partyImages";
 import { formatPartyDateLong, formatTimeRange, googleMapsUrl } from "@/lib/format";
 import { RsvpForm } from "./RsvpForm";
 import { NoteWall } from "./NoteWall";
@@ -42,12 +43,17 @@ export function PublicPartyView({
     <>
       <RisingBubbles />
       <IdleConfetti />
-      <EnvelopeIntro partyTitle={party.party_title} />
+      <EnvelopeIntro
+        partyTitle={party.party_title}
+        birthdayChildName={party.birthday_child_name}
+        date={party.date}
+        inviteImageUrl={inviteImage(party)}
+      />
 
       <main className="relative mx-auto max-w-2xl px-4 pt-8 pb-32 sm:px-6 sm:pt-10">
         {/* HERO — invite art at full natural aspect, framed by a soft card */}
         {(() => {
-          const heroSrc = party.banner_image_url || party.hero_image_url;
+          const heroSrc = bannerImage(party);
           return (
             <div className="pp-card overflow-hidden">
               {heroSrc && (

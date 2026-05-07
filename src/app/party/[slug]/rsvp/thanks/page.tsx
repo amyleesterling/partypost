@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { findParty } from "@/config/parties";
 import { fetchPartyOnly } from "@/lib/sheets";
+import { inviteImage } from "@/lib/partyImages";
 import { getTheme, themeCssVars, type ThemeTokens } from "@/lib/themes";
 import { extractPaletteFromUrl, applyPaletteOverride } from "@/lib/extractPalette";
 import { ThanksView } from "./ThanksView";
@@ -37,10 +38,10 @@ export default async function ThanksPage({
   }
 
   const baseTheme = getTheme(party.theme);
+  const invite = inviteImage(party);
   let theme: ThemeTokens = baseTheme;
-  if (party.hero_image_url) {
-    const heroUrl = absoluteUrl(party.hero_image_url);
-    const palette = await extractPaletteFromUrl(heroUrl);
+  if (invite) {
+    const palette = await extractPaletteFromUrl(absoluteUrl(invite));
     theme = { ...baseTheme, ...applyPaletteOverride(baseTheme, palette) };
   }
 
@@ -50,10 +51,10 @@ export default async function ThanksPage({
     <div className="themed" style={themeCssVars(theme)}>
       <main className="mx-auto max-w-xl px-4 pt-10 pb-16 sm:px-6">
         <div className="pp-card overflow-hidden">
-          {party.hero_image_url && (
+          {invite && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={party.hero_image_url}
+              src={invite}
               alt={party.party_title}
               className="block w-full h-auto"
             />

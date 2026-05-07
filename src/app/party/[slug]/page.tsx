@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { findParty } from "@/config/parties";
 import { fetchPartyBundle } from "@/lib/sheets";
+import { bannerImage } from "@/lib/partyImages";
 import { getTheme, themeCssVars, type ThemeTokens } from "@/lib/themes";
 import { extractPaletteFromUrl, applyPaletteOverride } from "@/lib/extractPalette";
 import { PublicPartyView } from "./PublicPartyView";
@@ -32,9 +33,9 @@ export default async function PublicPartyPage({ params }: { params: Promise<Para
   }
   const baseTheme = getTheme(party.theme);
 
-  // Auto-derive theme colors from the banner (or hero) image. Falls through
-  // to the static theme if extraction fails.
-  const sourceImage = party.banner_image_url || party.hero_image_url;
+  // Auto-derive theme colors from the banner image (falls back to invite if
+  // no banner). Falls through to the static theme if extraction fails.
+  const sourceImage = bannerImage(party);
   let theme: ThemeTokens = baseTheme;
   if (sourceImage) {
     const url = absoluteUrl(sourceImage);

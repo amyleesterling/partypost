@@ -6,9 +6,17 @@ type Phase = "closed" | "opening" | "done";
 
 const SESSION_KEY = "pp-envelope-seen";
 
-export function EnvelopeIntro({ partyTitle }: { partyTitle: string }) {
-  // Start as null until we read sessionStorage so we can skip the animation
-  // on revisits within the same browser session without a visual flash.
+export function EnvelopeIntro({
+  partyTitle,
+  birthdayChildName,
+  date,
+  inviteImageUrl,
+}: {
+  partyTitle: string;
+  birthdayChildName?: string | null;
+  date?: string | null;
+  inviteImageUrl?: string | null;
+}) {
   const [phase, setPhase] = useState<Phase | null>(null);
 
   useEffect(() => {
@@ -29,11 +37,12 @@ export function EnvelopeIntro({ partyTitle }: { partyTitle: string }) {
     } catch {
       /* ignore */
     }
-    // Animation: flap 0–600ms, card emerge 500–1500ms, fade 1500–2100ms
-    setTimeout(() => setPhase("done"), 2100);
+    setTimeout(() => setPhase("done"), 2300);
   }
 
   if (phase === null || phase === "done") return null;
+
+  const dateLabel = formatDateForCard(date);
 
   return (
     <div
@@ -53,8 +62,31 @@ export function EnvelopeIntro({ partyTitle }: { partyTitle: string }) {
         <div className="pp-env">
           <div className="pp-env-back" />
           <div className="pp-env-card">
-            <div className="pp-env-card-emoji" aria-hidden="true">🎂</div>
-            <div className="pp-env-card-text">You&apos;re invited!</div>
+            {inviteImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={inviteImageUrl}
+                alt={partyTitle}
+                className="pp-env-card-img"
+              />
+            ) : (
+              <div className="pp-env-card-frame">
+                <div className="pp-env-card-eyebrow">You&apos;re Invited</div>
+                <div className="pp-env-card-title">{partyTitle}</div>
+                {(dateLabel || birthdayChildName) && (
+                  <div className="pp-env-card-meta">
+                    {dateLabel}
+                    {dateLabel && birthdayChildName ? " · " : ""}
+                    {birthdayChildName ? `for ${birthdayChildName}` : ""}
+                  </div>
+                )}
+                <div className="pp-env-card-flourish" aria-hidden="true">
+                  <span>✦</span>
+                  <span>·</span>
+                  <span>✦</span>
+                </div>
+              </div>
+            )}
           </div>
           <div className="pp-env-front" />
           <div className="pp-env-flap" />
@@ -64,4 +96,15 @@ export function EnvelopeIntro({ partyTitle }: { partyTitle: string }) {
       </div>
     </div>
   );
+}
+
+function formatDateForCard(d: string | null | undefined): string {
+  if (!d) return "";
+  const [y, m, day] = d.split("-").map(Number);
+  if (!y || !m || !day) return "";
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+  return `${months[m - 1]} ${day}, ${y}`;
 }

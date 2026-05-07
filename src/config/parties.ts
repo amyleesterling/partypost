@@ -42,7 +42,7 @@ const DEMO_FIXTURE: PartyFixture = {
     food_note: "Treasure-chest sandwiches, fruit cannons, and a rum-cake (kid version)",
     rain_plan: "We'll move belowdecks (the indoor pavilion) if the weather mutinies.",
     theme: "beach",
-    hero_image_url: "/demo-banner.png",
+    invite_image_url: "/demo-invite.png",
     banner_image_url: "/demo-banner.png",
     profile_image_url: null,
   },

@@ -22,10 +22,14 @@ export interface PartyData {
   food_note: string | null;
   rain_plan: string | null;
   theme: ThemeKey | string;
-  hero_image_url: string | null;
+  /** The portrait/square invitation image — shown inside the envelope and
+      on the thanks page. */
+  invite_image_url?: string | null;
+  /** Legacy alias for invite_image_url (older sheets used "hero_image_url").
+      Code reads invite_image_url first, then falls back to hero_image_url. */
+  hero_image_url?: string | null;
   /** Optional landscape banner used on the party page hero. Falls back to
-      hero_image_url if not set. The thanks page always uses hero_image_url
-      (typically the portrait invite). */
+      invite_image_url if not set. */
   banner_image_url?: string | null;
   profile_image_url: string | null;
 }
