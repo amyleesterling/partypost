@@ -10,6 +10,7 @@ import { StickyRsvpBar } from "./StickyRsvpBar";
 import { Countdown } from "./Countdown";
 import { IdleConfetti } from "./IdleConfetti";
 import { RisingBubbles } from "./RisingBubbles";
+import { EnvelopeIntro } from "./EnvelopeIntro";
 
 export function PublicPartyView({
   slug,
@@ -41,6 +42,7 @@ export function PublicPartyView({
     <>
       <RisingBubbles />
       <IdleConfetti />
+      <EnvelopeIntro partyTitle={party.party_title} />
 
       <main className="relative mx-auto max-w-2xl px-4 pt-8 pb-32 sm:px-6 sm:pt-10">
         {/* HERO — invite art at full natural aspect, framed by a soft card */}
