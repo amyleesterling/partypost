@@ -4,7 +4,7 @@ A **FREE** Paperless-Post-style invite site for kids' birthday parties. Each par
 
 **Live demo:** [partypost.vercel.app/party/demo](https://partypost.vercel.app/party/demo)
 
-You don't need to be a developer. Open this repo in any AI assistant (Claude Code, ChatGPT, Cursor, etc.) and follow the two steps below.
+You don't need to be a developer. Any AI assistant (Claude Code, ChatGPT, Cursor, etc.) can get this running for you in 10 minutes. Follow the two steps below.
 
 ---
 
