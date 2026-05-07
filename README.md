@@ -1,124 +1,57 @@
 # PartyPost
 
-A tiny, FREE cheerful birthday-party invitation + RSVP site. Each party = one Google Sheet (your "database") + one Google Apps Script web app (your "API") + one entry in `src/config/parties.ts`. Guests RSVP without signing in. You see RSVPs by opening the Sheet.
+A **FREE** Paperless-Post-style invitation site for kids' birthday parties. Each party gets a beautiful page you share with one link. RSVPs land in a Google Sheet you own.
 
-This effectively replaces Paperless Post for personal use.
+No monthly bill. No guest accounts. No marketing emails to your friends. Just your Google account + a free Vercel deployment.
 
-Built for managing kids' birthday parties — not a SaaS. No accounts, no bill, powered by free tier Google Drive.
+**Built to be set up with help from any AI assistant** (Claude, ChatGPT, Cursor, etc.). Open this repo in your AI and ask it to walk you through it. The first party takes about an hour; each one after is ~10 minutes.
 
-## Stack
+## See it in action
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 · canvas-confetti · react-hook-form + zod · **Google Sheets + Apps Script** as the backend · Vercel for hosting.
+[partypost.vercel.app/party/sophia-7](https://partypost.vercel.app/party/sophia-7) — a themed invite with your banner art, a live countdown to the party, an RSVP form, a birthday-wishes wall, and an "Add to Google Calendar" button. Confetti when guests RSVP yes 🎉.
 
-## How a party works
+## What you'll need
 
-```
-guest's phone ──→ partypost.vercel.app/party/sophia-7
-                       │
-                       ├─ Server-side: fetch party config + approved notes from Apps Script (cached 60s)
-                       │
-                       ├─ RSVP form → POST direct to Apps Script Web App URL
-                       │              → Apps Script appends row to RSVPs tab in your Sheet
-                       │              → Apps Script sends confirmation email via your Gmail
-                       │
-                       └─ Note wall   → POST direct to Apps Script
-                                       → Appends to Notes tab (is_approved=FALSE)
-                                       → You set is_approved=TRUE in the Sheet to publish
+- A Google account (Gmail + Drive)
+- A free [GitHub](https://github.com) account
+- A free [Vercel](https://vercel.com) account (signs in with GitHub)
 
-You manage everything by opening the Google Sheet.
-```
+## Setting up your first party
 
-## First-party setup (~10 min, one-time per party)
+Tell your AI assistant something like:
 
-Detailed walk-through in [`apps-script/SETUP.md`](apps-script/SETUP.md). The short version:
+> *"Help me set up PartyPost for my kid's birthday. Here are the details:*
+> *Name: Sophia, turning 7*
+> *Date: Sunday, August 16, 12:30–3:00pm*
+> *Place: Arlington Reservoir Beach*
+> *Theme: beach*
+> *I have a banner image saved at ~/Downloads/sophia-banner.png."*
 
-1. **Create a Google Sheet** (https://sheets.new)
-2. **Extensions → Apps Script** → paste in [`apps-script/Code.gs`](apps-script/Code.gs) → Save
-3. Run **`setupSheet`** once → grants permissions, creates Settings/RSVPs/Notes tabs
-4. Fill in the **Settings tab** (party_title, date, location, theme, etc.)
-5. **Deploy → Web app**, "Execute as: Me", "Anyone has access" → copy the URL
-6. Add the slug + URL to [`src/config/parties.ts`](src/config/parties.ts)
-7. Push to GitHub → Vercel auto-deploys → party page is live at `/party/<slug>`
+It will walk you through:
 
-## Where the data lives
+1. **Fork this repo** on GitHub (one click)
+2. **Deploy on Vercel** — connect to your fork, click Deploy. ~90 seconds.
+3. **Create a Google Sheet** for the party
+4. **Paste in [`apps-script/Code.gs`](apps-script/Code.gs)** via Extensions → Apps Script, then run `setupSheet` once
+5. **Fill in the Settings tab** with your party details
+6. **Deploy the Apps Script as a Web App** ("Anyone has access"), copy the URL
+7. **Add the URL + a slug** to [`src/config/parties.ts`](src/config/parties.ts)
+8. **Commit + push** — your party page is live
 
-- **Settings** tab — all the party details (title, date, theme, etc.). Edit here to change the public page; updates show up within ~1 min.
-- **RSVPs** tab — one row per RSVP. Sort, filter, COUNTIF whatever you need. Native CSV export via File → Download.
-- **Notes** tab — birthday wishes from guests. New ones land with `is_approved=FALSE`. Set to `TRUE` for the ones you want on the public page.
+The detailed click-by-click walkthrough is in [`apps-script/SETUP.md`](apps-script/SETUP.md).
 
-## What the public page has
+## Seeing your RSVPs
 
-- Themed hero card (10 themes: beach / princess / woodland / space / rainbow / science / garden tea / arcade / dinosaur / default)
-- Birthday-child profile photo
-- Party details (when, where, RSVP-by, gifts, food, rain plan, host)
-- Tap-to-call host phone, tap-to-Google-Maps address
-- RSVP form (yes / maybe / no, kids + adults counts, allergies, private + public notes)
-- Confetti animation on submit 🎉
-- "Add to Google Calendar" + .ics download
-- Magic edit link (no account needed)
-- Birthday wishes wall (host-moderated)
-- Mobile sticky RSVP bar
+Open your Google Sheet. The **RSVPs** tab has every response. Sort, filter, COUNTIF the cupcake math, whatever you want. CSV export: File → Download → CSV.
 
-## Local dev
+Want to change anything on the public page? Edit the **Settings** tab. Changes show up within a minute.
 
-```bash
-npm install
-npm run dev
-```
+## Adding more parties later
 
-Add at least one party to `src/config/parties.ts` first or `/` will be empty. Visit http://localhost:3000.
+A new party = a new Google Sheet + a new entry in `parties.ts`. Tell your AI: *"Add a new party for [name], [age], [date]. I have the banner at [path]."*
 
-## Deploy
+## Make it yours
 
-```bash
-git push origin main
-```
+Ask your AI to swap the banner, change colors, tweak wording, add a section, switch the theme. The repo is meant to be customized.
 
-Vercel auto-deploys (after you've imported the repo at vercel.com once). No env vars required.
-
-## Limits / quotas
-
-- **Apps Script email**: ~100/day from a personal Gmail account. Plenty for kids' parties — that's 100 RSVP confirmations + 100 host notifications per party per day.
-- **Apps Script execution**: 90 min/day total compute, 6 min per request. Each RSVP submit takes maybe 500ms. You'd need ~10,000 RSVPs/day to hit the daily cap.
-- **Sheets API rate**: 60 reads/min per user. The party page is cached server-side for 60s, so guests don't hit this even at moderate traffic.
-
-## Routes
-
-- `/` — landing page (lists active parties from the registry)
-- `/party/[slug]` — public invite page
-- `/party/[slug]/rsvp/thanks` — confirmation page with edit link
-- `/party/[slug]/rsvp/edit/[token]` — guest updates their own RSVP via magic token
-
-## Where things live in the code
-
-```
-apps-script/
-├── Code.gs               # The Apps Script template (paste into each new sheet)
-└── SETUP.md              # Per-party setup walkthrough
-
-src/
-├── config/parties.ts     # The registry: { slug → scriptUrl }
-├── lib/
-│   ├── sheets.ts         # HTTP client for the Apps Script web app
-│   ├── themes.ts         # 10 theme definitions
-│   ├── format.ts         # Date / time / address formatters
-│   ├── ics.ts            # Calendar (Google + .ics) helpers
-│   └── validation.ts     # zod schemas for RSVP form
-└── app/
-    ├── page.tsx          # Landing
-    └── party/[slug]/     # Public party page + RSVP + thanks + edit
-```
-
-## Why Google Sheets
-
-- You already have it. No DB to manage, no monthly cost.
-- The data is where you can sort/filter/share/export it natively.
-- Apps Script handles email confirmations using your Gmail quota.
-- Concurrency is fine for party-scale traffic. `LockService` serializes writes.
-
-## Future ideas (not built)
-
-- Native send for "message all yes RSVPs" via MailApp (currently you copy emails out of the Sheet)
-- Guest photo gallery after the party (Drive folder)
-- Print-friendly checklist (party favors, food counts)
-- Password-protected parties
+[`AGENTS.md`](AGENTS.md) is what your AI assistant should read first — it explains the architecture and conventions so the AI doesn't suggest unnecessary complexity (like adding accounts or a database).
