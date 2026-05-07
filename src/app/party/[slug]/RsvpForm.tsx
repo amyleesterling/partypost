@@ -10,15 +10,15 @@ import { editRsvp, submitRsvp, type RsvpRecord } from "@/lib/sheets";
 
 const NO_LINES = [
   "🥺 We&rsquo;ll miss you — saving you some frosting.",
-  "💔 Boooo. We&rsquo;ll send pics of the chaos.",
   "🎈 Extra balloons for everyone else, then.",
-  "👀 You sure? There will be pizza.",
-  "🦆 Aw, the duck on the invite is sad now.",
+  "🐥 Aw, the duckling on the invite is sad now.",
   "🌞 The sun on the invite is also sad.",
-  "🧚 The snack-counting fairies are leaving a passive-aggressive note.",
   "🎂 Sophia just sighed. Just so you know.",
-  "🥹 We respect this. Cake is a journey.",
   "🌊 The reservoir waves will whisper your name.",
+  "🧚 The snack-counting fairies are composing a haiku in your honor.",
+  "🐚 A seashell on the shore noted your absence. Briefly. With reverence.",
+  "📜 Your name has been entered into the Book of Brave Declines.",
+  "⛱️ One beach umbrella tilted, melancholically. As is the way.",
 ];
 
 export function RsvpForm({
