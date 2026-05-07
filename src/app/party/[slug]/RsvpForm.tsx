@@ -6,7 +6,13 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import confetti from "canvas-confetti";
 import { rsvpSchema, type RsvpInput, type RsvpOutput } from "@/lib/validation";
-import { editRsvp, submitRsvp, type RsvpRecord } from "@/lib/sheets";
+import {
+  editRsvp,
+  fetchInvitee,
+  pingTrackClick,
+  submitRsvp,
+  type RsvpRecord,
+} from "@/lib/sheets";
 
 const NO_LINES = [
   "🥺 We&rsquo;ll miss you — saving you some frosting.",
@@ -27,12 +33,14 @@ export function RsvpForm({
   isDemo,
   initial,
   editToken,
+  inviteToken,
 }: {
   slug: string;
   scriptUrl?: string;
   isDemo?: boolean;
   initial?: RsvpRecord;
   editToken?: string;
+  inviteToken?: string | null;
 }) {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -42,6 +50,7 @@ export function RsvpForm({
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RsvpInput, unknown, RsvpOutput>({
     resolver: zodResolver(rsvpSchema),
@@ -60,6 +69,23 @@ export function RsvpForm({
       public_note: initial?.public_note ?? "",
     },
   });
+
+  // If the URL has ?i=TOKEN (invite link), ping click tracking + prefill the
+  // form with the invitee's name/email from the Sheet.
+  useEffect(() => {
+    if (!inviteToken || !scriptUrl || isDemo) return;
+    pingTrackClick(scriptUrl, inviteToken);
+    fetchInvitee(scriptUrl, inviteToken).then((invitee) => {
+      if (!invitee) return;
+      if (invitee.name && !initial?.parent_names) {
+        setValue("parent_names", invitee.name, { shouldValidate: false });
+      }
+      if (invitee.email && !initial?.email) {
+        setValue("email", invitee.email, { shouldValidate: false });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inviteToken, scriptUrl, isDemo]);
 
   const status = watch("status");
   const isEdit = !!editToken;
@@ -133,6 +159,7 @@ export function RsvpForm({
       const result = await submitRsvp(scriptUrl, values, {
         siteUrl: window.location.origin,
         slug,
+        inviteToken: inviteToken ?? null,
       });
       router.push(`/party/${slug}/rsvp/thanks?t=${encodeURIComponent(result.edit_token)}`);
     } catch (err) {

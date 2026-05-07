@@ -17,6 +17,7 @@
 const SETTINGS_SHEET = 'Settings';
 const RSVPS_SHEET = 'RSVPs';
 const NOTES_SHEET = 'Notes';
+const INVITES_SHEET = 'Invitations';
 
 const SETTINGS_KEYS = [
   ['birthday_child_name', 'Sophia'],
@@ -41,6 +42,9 @@ const SETTINGS_KEYS = [
   ['banner_image_url',    ''],
   ['invite_image_url',    ''],
   ['profile_image_url',   ''],
+  // Required for invitation emails (so the email link knows the party URL).
+  // Should match the slug used in src/config/parties.ts in the PartyPost repo.
+  ['slug',                ''],
 ];
 
 const RSVP_HEADERS = [
@@ -55,6 +59,11 @@ const NOTE_HEADERS = [
   'is_public', 'is_approved', 'created_at',
 ];
 
+const INVITE_HEADERS = [
+  'id', 'token', 'name', 'email',
+  'sent_at', 'opened_at', 'clicked_at', 'rsvp_id', 'notes',
+];
+
 // ----- One-time setup -----
 
 function setupSheet() {
@@ -64,6 +73,7 @@ function setupSheet() {
   ensureSettingsTab_(ss);
   ensureTabWithHeaders_(ss, RSVPS_SHEET, RSVP_HEADERS);
   ensureTabWithHeaders_(ss, NOTES_SHEET, NOTE_HEADERS);
+  ensureTabWithHeaders_(ss, INVITES_SHEET, INVITE_HEADERS);
 
   // Remove the default "Sheet1" if it's still around and empty.
   const def = ss.getSheetByName('Sheet1');
@@ -104,6 +114,13 @@ function doGet(e) {
     if (action === 'getParty')        return getPartyData_();
     if (action === 'getNotes')        return getApprovedNotes_();
     if (action === 'getRsvpByToken')  return getRsvpByToken_(e.parameter.token);
+    if (action === 'getInvitee')      return getInviteeByToken_(e.parameter.i);
+    if (action === 'trackClick')      return trackInviteClick_(e.parameter.i);
+    // Pixel tracker: returns 1x1 GIF, marks opened_at on the invitee row.
+    if (action === 'trackOpen') {
+      trackInviteOpen_(e.parameter.i);
+      return { _pixel: true };
+    }
     throw new Error('Unknown GET action: ' + action);
   });
 }
@@ -112,7 +129,7 @@ function doPost(e) {
   return handle_(function () {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     const action = body.action;
-    if (action === 'submitRsvp')  return submitRsvp_(body.data || {}, body.siteUrl || '', body.slug || '');
+    if (action === 'submitRsvp')  return submitRsvp_(body.data || {}, body.siteUrl || '', body.slug || '', body.inviteToken || '');
     if (action === 'submitNote')  return submitNote_(body.data || {});
     if (action === 'editRsvp')    return editRsvp_(body.token, body.data || {});
     throw new Error('Unknown POST action: ' + action);
@@ -210,7 +227,7 @@ function getRsvpByToken_(token) {
 
 // ----- Writes -----
 
-function submitRsvp_(data, siteUrl, slug) {
+function submitRsvp_(data, siteUrl, slug, inviteToken) {
   validateRsvp_(data);
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -248,6 +265,11 @@ function submitRsvp_(data, siteUrl, slug) {
         is_approved: true,
         created_at: now,
       });
+    }
+
+    // Tie RSVP back to the invitation row, if the URL had ?i=TOKEN.
+    if (inviteToken) {
+      try { linkRsvpToInvite_(ss, inviteToken, id); } catch (_e) { /* ignore */ }
     }
 
     const settings = readSettings_(ss);
@@ -549,5 +571,218 @@ function sendConfirmationEmails_(settings, data, editToken, siteUrl, slug) {
       ].filter(Boolean).join('\n');
       MailApp.sendEmail(settings.host_email, subject, lines);
     } catch (e) { /* ignore */ }
+  }
+}
+
+// ============================================================================
+// INVITATIONS
+// ----------------------------------------------------------------------------
+// Workflow:
+//   1. Open the Sheet, switch to the "Invitations" tab
+//   2. Add rows: just `name` and `email` per guest (leave the other columns
+//      blank — they fill in automatically)
+//   3. From the Apps Script editor, run sendPendingInvitations()
+//      (function dropdown → sendPendingInvitations → ▶ Run)
+//   4. Each guest gets a personalized email with a link like
+//      https://partypost.vercel.app/party/<slug>?i=<TOKEN>
+//   5. As guests open / click / RSVP, the Invitations row updates in real time
+// ============================================================================
+
+/**
+ * Manual entry point. Run this from the Apps Script editor (or wire it to a
+ * sheet menu / time trigger) after adding new rows to the Invitations tab.
+ *
+ * Reads the SITE_URL Script Property if set, otherwise falls back to the
+ * compiled-in default. Uses Settings.party_title for the email subject.
+ */
+function sendPendingInvitations() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const settings = readSettings_(ss);
+  const slug = _readSiteSlug_(ss);
+  const siteUrl = _readSiteUrl_();
+  const scriptUrl = ScriptApp.getService().getUrl();
+
+  if (!slug) {
+    SpreadsheetApp.getActive().toast(
+      'Set the "slug" row in Settings (e.g. "sophia-7") before sending invites.',
+      'PartyPost', 6
+    );
+    throw new Error('Settings.slug is required to build invitation URLs.');
+  }
+
+  const sheet = ss.getSheetByName(INVITES_SHEET);
+  if (!sheet) throw new Error('Invitations tab missing. Run setupSheet().');
+  const last = sheet.getLastRow();
+  if (last < 2) {
+    SpreadsheetApp.getActive().toast('No invitations to send.', 'PartyPost', 4);
+    return;
+  }
+
+  const rows = sheet.getRange(2, 1, last - 1, INVITE_HEADERS.length).getValues();
+  let sent = 0;
+  let skipped = 0;
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rowToObj_(INVITE_HEADERS)(rows[i]);
+    if (row.sent_at) continue; // already sent
+    if (!row.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(row.email).trim())) {
+      skipped++;
+      continue;
+    }
+
+    const id = row.id || Utilities.getUuid();
+    const token = row.token || randomToken_(20);
+    try {
+      sendInvitationEmail_({
+        settings: settings,
+        siteUrl: siteUrl,
+        scriptUrl: scriptUrl,
+        slug: slug,
+        name: row.name || '',
+        email: String(row.email).trim(),
+        token: token,
+      });
+      // Update the row: id, token, sent_at
+      const rowIndex = i + 2;
+      sheet.getRange(rowIndex, 1).setValue(id);
+      sheet.getRange(rowIndex, 2).setValue(token);
+      sheet.getRange(rowIndex, 5).setValue(new Date()); // sent_at
+      sent++;
+    } catch (err) {
+      const rowIndex = i + 2;
+      sheet.getRange(rowIndex, 9).setValue('send failed: ' + err.message); // notes
+      skipped++;
+    }
+  }
+
+  SpreadsheetApp.getActive().toast(
+    'Sent ' + sent + ', skipped ' + skipped, 'PartyPost', 6
+  );
+}
+
+function _readSiteSlug_(ss) {
+  const settings = readSettings_(ss);
+  if (settings.slug) return String(settings.slug).trim();
+  // Fall back to the spreadsheet name lowercased, dashed.
+  return null;
+}
+
+function _readSiteUrl_() {
+  const props = PropertiesService.getScriptProperties();
+  const v = props.getProperty('SITE_URL');
+  return (v || 'https://partypost.vercel.app').replace(/\/$/, '');
+}
+
+function sendInvitationEmail_(opts) {
+  const settings = opts.settings;
+  const partyTitle = settings.party_title || 'a birthday party';
+  const partyUrl = opts.siteUrl + '/party/' + opts.slug + '?i=' + encodeURIComponent(opts.token);
+  const pixelUrl = opts.scriptUrl + '?action=trackOpen&i=' + encodeURIComponent(opts.token);
+  const greeting = opts.name ? ('Hi ' + opts.name + ',') : 'Hi!';
+  const heroImg = settings.invite_image_url || settings.banner_image_url || settings.hero_image_url || '';
+  const accent = '#2F80ED';
+  const ink = '#0B3A57';
+  const heading = '#3B2A6B';
+  const muted = '#3F6280';
+  const whenStr = formatPartyDateHuman_(settings);
+  const where = [settings.location_name, settings.location_address].filter(Boolean).join(', ');
+
+  const html = ''
+    + '<div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:#eaf4fb;padding:24px 12px;color:' + ink + ';">'
+    + '<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 6px 20px rgba(15,30,60,0.10);">'
+    + (heroImg ? '<img src="' + escapeHtml_(heroImg) + '" alt="' + escapeHtml_(partyTitle) + '" style="display:block;width:100%;height:auto;">' : '')
+    + '<div style="padding:24px;">'
+    +   '<p style="margin:0 0 12px;font-size:16px;color:' + ink + ';">' + escapeHtml_(greeting) + '</p>'
+    +   '<h1 style="margin:0 0 8px;font-size:24px;color:' + heading + ';font-family:Georgia,serif;">You&rsquo;re invited!</h1>'
+    +   '<h2 style="margin:0 0 14px;font-size:18px;color:' + ink + ';font-weight:600;">' + escapeHtml_(partyTitle) + '</h2>'
+    +   (whenStr ? '<div style="color:' + muted + ';font-size:14px;">' + escapeHtml_(whenStr) + '</div>' : '')
+    +   (where ? '<div style="color:' + muted + ';font-size:14px;margin-top:2px;">' + escapeHtml_(where) + '</div>' : '')
+    +   '<div style="margin-top:22px;">'
+    +     '<a href="' + escapeHtml_(partyUrl) + '" style="display:inline-block;padding:13px 28px;background:' + accent + ';color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:700;font-size:15px;">View invitation &amp; RSVP →</a>'
+    +   '</div>'
+    +   '<div style="margin-top:24px;padding-top:18px;border-top:1px solid #e0e7ee;font-size:12px;color:' + muted + ';">'
+    +     'Tap the button above to view the full invite and RSVP. No account needed.'
+    +   '</div>'
+    + '</div>'
+    + '</div>'
+    + '<img src="' + escapeHtml_(pixelUrl) + '" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;">'
+    + '</div>';
+
+  const text = [
+    greeting,
+    '',
+    "You're invited to " + partyTitle + '.',
+    whenStr,
+    where,
+    '',
+    'View invitation & RSVP: ' + partyUrl,
+  ].filter(Boolean).join('\n');
+
+  MailApp.sendEmail({
+    to: opts.email,
+    subject: "You're invited: " + partyTitle,
+    htmlBody: html,
+    body: text,
+  });
+}
+
+function trackInviteOpen_(token) {
+  if (!token) return;
+  const found = findInviteRow_(token);
+  if (!found) return;
+  if (!found.data.opened_at) {
+    SpreadsheetApp.getActiveSpreadsheet()
+      .getSheetByName(INVITES_SHEET)
+      .getRange(found.rowIndex, 6) // opened_at column
+      .setValue(new Date());
+  }
+}
+
+function trackInviteClick_(token) {
+  if (!token) throw new Error('Missing token');
+  const found = findInviteRow_(token);
+  if (!found) return { ok: false }; // unknown invite
+  if (!found.data.clicked_at) {
+    SpreadsheetApp.getActiveSpreadsheet()
+      .getSheetByName(INVITES_SHEET)
+      .getRange(found.rowIndex, 7) // clicked_at column
+      .setValue(new Date());
+  }
+  return { ok: true };
+}
+
+function getInviteeByToken_(token) {
+  if (!token) throw new Error('Missing token');
+  const found = findInviteRow_(token);
+  if (!found) throw new Error('Unknown invite');
+  return {
+    name: found.data.name || '',
+    email: found.data.email || '',
+  };
+}
+
+function findInviteRow_(token) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(INVITES_SHEET);
+  if (!sheet) return null;
+  const last = sheet.getLastRow();
+  if (last < 2) return null;
+  const rows = sheet.getRange(2, 1, last - 1, INVITE_HEADERS.length).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][1] || '') === token) {
+      return { rowIndex: i + 2, data: rowToObj_(INVITE_HEADERS)(rows[i]) };
+    }
+  }
+  return null;
+}
+
+function linkRsvpToInvite_(ss, token, rsvpId) {
+  const sheet = ss.getSheetByName(INVITES_SHEET);
+  if (!sheet) return;
+  const found = findInviteRow_(token);
+  if (!found) return;
+  sheet.getRange(found.rowIndex, 8).setValue(rsvpId); // rsvp_id column
+  if (!found.data.clicked_at) {
+    sheet.getRange(found.rowIndex, 7).setValue(new Date());
   }
 }

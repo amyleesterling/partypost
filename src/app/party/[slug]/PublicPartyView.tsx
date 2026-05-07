@@ -19,12 +19,14 @@ export function PublicPartyView({
   isDemo,
   party,
   notes,
+  inviteToken,
 }: {
   slug: string;
   scriptUrl?: string;
   isDemo?: boolean;
   party: PartyData;
   notes: PublicNote[];
+  inviteToken?: string | null;
 }) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -84,7 +86,12 @@ export function PublicPartyView({
             <span aria-hidden className="pp-wiggle inline-block text-2xl">🎉</span>
           </h2>
           <div className="mt-6">
-            <RsvpForm slug={slug} scriptUrl={scriptUrl} isDemo={isDemo} />
+            <RsvpForm
+              slug={slug}
+              scriptUrl={scriptUrl}
+              isDemo={isDemo}
+              inviteToken={inviteToken}
+            />
           </div>
         </section>
 

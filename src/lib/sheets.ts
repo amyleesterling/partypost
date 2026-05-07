@@ -136,14 +136,50 @@ export async function fetchPartyOnly(scriptUrl: string): Promise<PartyData> {
 export async function submitRsvp(
   scriptUrl: string,
   data: unknown,
-  ctx: { siteUrl: string; slug: string },
+  ctx: { siteUrl: string; slug: string; inviteToken?: string | null },
 ): Promise<{ id: string; edit_token: string }> {
   return callPost(scriptUrl, {
     action: "submitRsvp",
     data,
     siteUrl: ctx.siteUrl,
     slug: ctx.slug,
+    inviteToken: ctx.inviteToken || "",
   });
+}
+
+export interface Invitee {
+  name: string;
+  email: string;
+}
+
+export async function fetchInvitee(
+  scriptUrl: string,
+  token: string,
+): Promise<Invitee | null> {
+  try {
+    const url = new URL(scriptUrl);
+    url.searchParams.set("action", "getInvitee");
+    url.searchParams.set("i", token);
+    const res = await fetch(url.toString(), { redirect: "follow", cache: "no-store" });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { ok: boolean; data?: Invitee };
+    return body.ok && body.data ? body.data : null;
+  } catch {
+    return null;
+  }
+}
+
+// Fire-and-forget click ping. Doesn't block render.
+export function pingTrackClick(scriptUrl: string, token: string): void {
+  try {
+    const url = new URL(scriptUrl);
+    url.searchParams.set("action", "trackClick");
+    url.searchParams.set("i", token);
+    // mode: no-cors avoids a CORS preflight; we don't need the response.
+    fetch(url.toString(), { method: "GET", mode: "no-cors", keepalive: true }).catch(() => {});
+  } catch {
+    /* ignore */
+  }
 }
 
 export async function editRsvp(

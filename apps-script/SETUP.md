@@ -68,10 +68,42 @@ If you change the **Apps Script code** (e.g. you pulled a new version of `Code.g
 
 ## Where the data lives
 
-- **RSVPs**: in the **RSVPs** tab. Sort, filter, add SUMIF formulas, whatever you want.
-- **Birthday wishes**: in the **Notes** tab. Set `is_approved` to `TRUE` for any note you want to show on the public page.
+- **Settings** tab — party config (date, location, theme, image URLs). Edit any cell to change the public page; changes show up within ~1 minute.
+- **RSVPs** tab — one row per guest who RSVPs. Sort, filter, add SUMIF formulas, whatever you want.
+- **Notes** tab — birthday wishes. New ones land with `is_approved=TRUE` automatically (kid party, no moderation needed).
+- **Invitations** tab — the guest list you're sending invites to (see below).
 - **CSV export**: File → Download → CSV (it's already a spreadsheet).
 - **Email guests**: filter the RSVPs tab by status → copy the email column.
+
+## Sending invitations (optional)
+
+The Apps Script can email personalized invitations and track who opens / clicks / RSVPs.
+
+### One-time setup
+
+1. In the Sheet's **Settings** tab, fill in the `slug` row with your party's slug (e.g. `sophia-7`) — same value you use in `parties.ts`. The script needs this to build the invitation URL.
+
+### Each time you want to invite people
+
+1. Open the Sheet → **Invitations** tab
+2. Add one row per guest. **Only fill in `name` and `email`** — leave everything else blank, the script populates them.
+3. Open the Apps Script editor (Extensions → Apps Script) → in the function dropdown at the top, pick **`sendPendingInvitations`** → click ▶ Run
+4. The script sends one personalized email per row that doesn't have `sent_at` yet. Each email contains a link like `partypost.vercel.app/party/sophia-7?i=<TOKEN>` plus a 1×1 tracking pixel.
+
+### What gets tracked
+
+After sending, the Invitations row updates as guests interact:
+
+- `sent_at` — set when the email goes out
+- `opened_at` — set when the email is opened (best-effort; depends on the email client loading remote images)
+- `clicked_at` — set when the guest taps the link in the email and lands on the party page
+- `rsvp_id` — set when the guest submits the RSVP form (links the invitation row to the RSVPs row)
+
+### Re-sending
+
+If you add more rows to the Invitations tab later and run `sendPendingInvitations` again, only the new rows (without `sent_at`) get emailed.
+
+To re-send to someone, clear their `sent_at` cell and run `sendPendingInvitations` again.
 
 ## Troubleshooting
 

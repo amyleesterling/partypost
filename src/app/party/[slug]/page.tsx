@@ -7,11 +7,19 @@ import { extractPaletteFromUrl, applyPaletteOverride } from "@/lib/extractPalett
 import { PublicPartyView } from "./PublicPartyView";
 
 type Params = { slug: string };
+type SearchParams = Promise<{ i?: string }>;
 
 export const revalidate = 60; // re-fetch sheet at most every 60s
 
-export default async function PublicPartyPage({ params }: { params: Promise<Params> }) {
+export default async function PublicPartyPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams: SearchParams;
+}) {
   const { slug } = await params;
+  const { i: inviteToken } = await searchParams;
   const entry = findParty(slug);
   if (!entry) notFound();
 
@@ -51,6 +59,7 @@ export default async function PublicPartyPage({ params }: { params: Promise<Para
         isDemo={!!entry.fixture}
         party={party}
         notes={notes}
+        inviteToken={inviteToken || null}
       />
     </div>
   );
