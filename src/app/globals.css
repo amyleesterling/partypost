@@ -70,3 +70,38 @@ html, body {
 .themed .pp-muted {
   color: var(--muted-ink);
 }
+
+/* Playful animations — title emoji bobs, theme chip emoji wiggles */
+@keyframes pp-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-12deg); }
+  40% { transform: rotate(14deg); }
+  60% { transform: rotate(-8deg); }
+  80% { transform: rotate(6deg); }
+}
+
+@keyframes pp-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.pp-wiggle {
+  animation: pp-wiggle 2.4s ease-in-out infinite;
+  transform-origin: 50% 75%;
+}
+
+.pp-bob {
+  animation: pp-bob 2.6s ease-in-out infinite;
+}
+
+@keyframes pp-float {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(var(--pp-drift, 8px), -14px) rotate(6deg); }
+  50% { transform: translate(calc(var(--pp-drift, 8px) * -1), 0) rotate(-4deg); }
+  75% { transform: translate(var(--pp-drift, 8px), 12px) rotate(8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-wiggle, .pp-bob { animation: none; }
+  [style*="pp-float"] { animation: none !important; }
+}

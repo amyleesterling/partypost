@@ -75,10 +75,10 @@ export function applyPaletteOverride(
   override: PaletteOverride | null,
 ) {
   if (!override) return base;
+  // Keep the theme's background (sky-blue for beach, etc.) — only swap in
+  // the image-derived accent, secondary, and text tones.
   return {
     ...base,
-    background: override.bg,
-    card: override.card,
     accent: override.accent,
     secondary: override.secondary,
     ink: override.ink,

@@ -48,7 +48,7 @@ export const THEMES: Record<ThemeKey, ThemeTokens> = {
   beach: {
     key: "beach",
     name: "Beach Birthday",
-    background: "linear-gradient(165deg, #eaf7ff, #fff5d6)",
+    background: "linear-gradient(180deg, #87CEEB 0%, #B3E0FF 45%, #E0F2FF 75%, #FFF5D6 100%)",
     card: "#ffffff",
     accent: "#2F80ED",
     secondary: "#FFD166",

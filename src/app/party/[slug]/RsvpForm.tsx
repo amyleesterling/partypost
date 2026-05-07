@@ -89,7 +89,7 @@ export function RsvpForm({
             >
               <input type="radio" value={s} className="sr-only" {...register("status")} />
               {s === "yes" && "✨ Yes!"}
-              {s === "no" && "😢 Can't make it"}
+              {s === "no" && "Can't make it"}
             </label>
           ))}
         </div>

@@ -42,6 +42,7 @@ export default async function PublicPartyPage({ params }: { params: Promise<Para
         notes={notes}
         themeEmoji={theme.emoji}
         themeName={theme.name}
+        themeKey={typeof party.theme === "string" ? party.theme : "default"}
       />
     </div>
   );
