@@ -6,16 +6,6 @@ A **FREE** Paperless-Post-style invite site for kids' birthday parties. Each par
 
 You don't need to be a developer. Open this repo in any AI assistant (Claude Code, ChatGPT, Cursor, etc.) and follow the two steps below.
 
-## Before you begin
-
-To use this, you'll need three free accounts (none of them charge a cent for what we're doing):
-
-- **[Google Drive](https://drive.google.com)** — every party needs a new Google spreadsheet that serves as the database for RSVPs.
-- **[Vercel](https://vercel.com)** — hosts your party page on the public internet, free tier.
-- **[GitHub](https://github.com)** — where the code lives. You'll fork this repo so you have your own copy.
-
-Sign up for any you don't already have before kicking off Step 1 — your AI assistant will walk you through using all three.
-
 ---
 
 ## Step 1 — Set up the site
@@ -82,3 +72,15 @@ Your Google Sheet's **RSVPs** tab. Sort, filter, export to CSV — all native. E
 ## Make it yours
 
 Ask your AI to swap the banner, change colors, tweak wording, add a section. [`AGENTS.md`](AGENTS.md) tells the AI the rules of the road for this codebase so suggestions stay aligned with the design (no auth, no admin, no Postgres — just one Sheet per party).
+
+---
+
+## Accounts you'll need
+
+To use this, you'll need three free accounts (none of them charge a cent for what we're doing):
+
+- **[Google Drive](https://drive.google.com)** — every party needs a new Google spreadsheet that serves as the database for RSVPs.
+- **[Vercel](https://vercel.com)** — hosts your party page on the public internet, free tier.
+- **[GitHub](https://github.com)** — where the code lives. You'll fork this repo so you have your own copy.
+
+Sign up for any you don't already have — your AI assistant will walk you through using all three.
