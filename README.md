@@ -33,7 +33,7 @@ Time: [TIME]
 Location: [LOCATION]
 ```
 
-The AI will walk you through forking the repo, deploying on Vercel, creating the Google Sheet for your party, and wiring it all together. **~1 hour for the first party, ~10 minutes for each one after.**
+The AI will walk you through forking the repo, deploying on Vercel, creating the Google Sheet for your party, and wiring it all together. **~10 minutes for the first party, ~5 minutes for each one after.**
 
 Click-by-click reference: [`apps-script/SETUP.md`](apps-script/SETUP.md).
 
