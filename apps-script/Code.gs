@@ -232,19 +232,19 @@ function submitRsvp_(data) {
       allergy_notes: data.allergy_notes || '',
       private_note: data.private_note || '',
       public_note: data.public_note || '',
-      public_note_consent: !!data.public_note_consent,
+      public_note_consent: true,
       created_at: now,
       updated_at: now,
     });
 
-    if (data.public_note && data.public_note_consent) {
+    if (data.public_note) {
       appendRow_(ss, NOTES_SHEET, NOTE_HEADERS, {
         id: Utilities.getUuid(),
         rsvp_id: id,
         display_name: data.parent_names,
         message: data.public_note,
         is_public: true,
-        is_approved: false,
+        is_approved: true,
         created_at: now,
       });
     }
@@ -272,7 +272,7 @@ function submitNote_(data) {
     display_name: String(data.display_name).slice(0, 80),
     message: String(data.message).slice(0, 500),
     is_public: true,
-    is_approved: false,
+    is_approved: true,
     created_at: new Date(),
   });
   return { ok: true };
@@ -366,12 +366,12 @@ function randomToken_(len) {
 
 function validateRsvp_(d) {
   if (!d || typeof d !== 'object') throw new Error('Missing data');
-  if (['yes', 'no', 'maybe'].indexOf(d.status) === -1) throw new Error('Invalid status');
+  if (['yes', 'no'].indexOf(d.status) === -1) throw new Error('Invalid status');
   if (!d.parent_names || !String(d.parent_names).trim()) throw new Error('Name required');
   if (!d.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(d.email).trim())) {
     throw new Error('Valid email required');
   }
-  if (d.status !== 'no') {
+  if (d.status === 'yes') {
     const total = Number(d.kids_count || 0) + Number(d.adults_count || 0);
     if (total <= 0) throw new Error('Add at least one attendee');
   }

@@ -59,7 +59,7 @@ export function NoteWall({
 
       {submitted && (
         <div className="mb-4 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-900">
-          Thanks! Your note is waiting for host approval.
+          Thanks! Your note is up on the wall.
         </div>
       )}
 

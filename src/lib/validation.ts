@@ -6,8 +6,6 @@ const themeKeys = [
   "rainbow", "science", "garden-tea", "arcade", "dinosaur",
 ] as const satisfies readonly ThemeKey[];
 
-// Helpers: HTML number inputs always provide strings, so accept string|number|empty
-// and coerce. Empty string -> null.
 const optionalNumber = z
   .union([z.coerce.number().int().min(0).max(1000), z.literal("")])
   .optional()
@@ -67,7 +65,7 @@ export type PartyUpdateOutput = z.output<typeof partyUpdateSchema>;
 
 export const rsvpSchema = z
   .object({
-    status: z.enum(["yes", "no", "maybe"]),
+    status: z.enum(["yes", "no"]),
     parent_names: z.string().trim().min(1, "Please tell us your name").max(200),
     email: z.string().trim().email("Enter a valid email"),
     phone: z.string().trim().max(40).optional().nullable().transform((v) => (v ? v : null)),
@@ -77,21 +75,13 @@ export const rsvpSchema = z
     allergy_notes: z.string().trim().max(500).optional().nullable().transform((v) => (v ? v : null)),
     private_note: z.string().trim().max(1000, "Max 1000 characters").optional().nullable().transform((v) => (v ? v : null)),
     public_note: z.string().trim().max(500, "Max 500 characters").optional().nullable().transform((v) => (v ? v : null)),
-    public_note_consent: z.boolean().optional().default(false),
   })
   .superRefine((data, ctx) => {
-    if (data.status !== "no" && data.kids_count + data.adults_count === 0) {
+    if (data.status === "yes" && data.kids_count + data.adults_count === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "If you're coming, please add at least one attendee",
         path: ["kids_count"],
-      });
-    }
-    if (data.public_note && !data.public_note_consent) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please confirm we can share your message on the note wall",
-        path: ["public_note_consent"],
       });
     }
   });

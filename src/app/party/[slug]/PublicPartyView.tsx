@@ -38,19 +38,17 @@ export function PublicPartyView({
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-6 pb-32 sm:px-6">
-      <div
-        className="pp-card relative overflow-hidden"
-        style={{ minHeight: party.hero_image_url ? "260px" : undefined }}
-      >
+      {/* HERO — invite art shown at full natural aspect, no cropping */}
+      <div className="pp-card overflow-hidden">
         {party.hero_image_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={party.hero_image_url}
-            alt=""
-            className="block aspect-[16/9] w-full object-cover"
+            alt={party.party_title}
+            className="block w-full h-auto"
           />
         )}
-        <div className="px-6 py-6 sm:px-8 sm:py-8">
+        <div className="px-6 py-6 sm:px-8 sm:py-7">
           <div className="flex items-center gap-2 text-sm pp-muted">
             <span aria-hidden>{themeEmoji}</span>
             <span>{themeName}</span>
@@ -58,21 +56,24 @@ export function PublicPartyView({
           <h1 className="mt-2 text-3xl font-bold leading-tight sm:text-4xl">
             {party.party_title}
           </h1>
-          {party.birthday_age != null && Number(party.birthday_age) > 0 && (
-            <div
-              className="mt-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold"
-              style={{ background: "var(--secondary)", color: "var(--ink)" }}
-            >
-              Turning {party.birthday_age} 🎂
-            </div>
-          )}
           {party.description && (
-            <p className="mt-4 whitespace-pre-wrap text-base pp-muted">
+            <p className="mt-3 whitespace-pre-wrap text-base pp-muted">
               {party.description}
             </p>
           )}
         </div>
       </div>
+
+      {/* RSVP — moved to the top, right after the hero */}
+      <section id="rsvp" className="mt-6 pp-card px-6 py-6">
+        <h2 className="text-2xl font-bold">RSVP</h2>
+        <p className="mt-1 text-sm pp-muted">
+          Let us know who&apos;s coming so we can plan snacks, cupcakes, and tiny celebratory logistics.
+        </p>
+        <div className="mt-5">
+          <RsvpForm slug={slug} scriptUrl={scriptUrl} />
+        </div>
+      </section>
 
       {party.profile_image_url && (
         <div className="mt-6 flex items-center gap-4 pp-card px-5 py-4">
@@ -141,16 +142,6 @@ export function PublicPartyView({
         </dl>
         <div className="mt-4 flex flex-wrap gap-2">
           <CalendarAddButton slug={slug} party={party} />
-        </div>
-      </section>
-
-      <section id="rsvp" className="mt-8 pp-card px-6 py-6">
-        <h2 className="text-2xl font-bold">RSVP</h2>
-        <p className="mt-1 text-sm pp-muted">
-          Let us know who&apos;s coming so we can plan snacks, cupcakes, and tiny celebratory logistics.
-        </p>
-        <div className="mt-5">
-          <RsvpForm slug={slug} scriptUrl={scriptUrl} />
         </div>
       </section>
 

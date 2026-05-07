@@ -30,7 +30,7 @@ export function RsvpForm({
   } = useForm<RsvpInput, unknown, RsvpOutput>({
     resolver: zodResolver(rsvpSchema),
     defaultValues: {
-      status: initial?.status ?? "yes",
+      status: (initial?.status === "no" ? "no" : "yes") as "yes" | "no",
       parent_names: initial?.parent_names ?? "",
       email: initial?.email ?? "",
       phone: initial?.phone ?? "",
@@ -40,7 +40,6 @@ export function RsvpForm({
       allergy_notes: initial?.allergy_notes ?? "",
       private_note: initial?.private_note ?? "",
       public_note: initial?.public_note ?? "",
-      public_note_consent: initial?.public_note_consent ?? false,
     },
   });
 
@@ -77,8 +76,8 @@ export function RsvpForm({
 
       <fieldset>
         <legend className="text-sm font-semibold">Will you be there?</legend>
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          {(["yes", "maybe", "no"] as const).map((s) => (
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {(["yes", "no"] as const).map((s) => (
             <label
               key={s}
               className={`flex cursor-pointer items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium ${
@@ -90,8 +89,7 @@ export function RsvpForm({
             >
               <input type="radio" value={s} className="sr-only" {...register("status")} />
               {s === "yes" && "✨ Yes!"}
-              {s === "maybe" && "🤔 Maybe"}
-              {s === "no" && "😢 Can't"}
+              {s === "no" && "😢 Can't make it"}
             </label>
           ))}
         </div>
@@ -134,7 +132,7 @@ export function RsvpForm({
         </Field>
       </div>
 
-      {status !== "no" && (
+      {status === "yes" && (
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Kids attending" error={errors.kids_count?.message}>
             <input
@@ -176,13 +174,6 @@ export function RsvpForm({
           placeholder="Happy birthday! Can't wait to celebrate."
           {...register("public_note")}
         />
-        <label className="mt-2 flex items-start gap-2 text-sm pp-muted">
-          <input type="checkbox" {...register("public_note_consent")} className="mt-1" />
-          <span>Yes, you can share this on the note wall (after host approval).</span>
-        </label>
-        {errors.public_note_consent && (
-          <p className="mt-1 text-sm text-red-600">{errors.public_note_consent.message}</p>
-        )}
       </Field>
 
       {submitError && (

@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { findParty } from "@/config/parties";
 import { fetchPartyOnly } from "@/lib/sheets";
-import { getTheme, themeCssVars } from "@/lib/themes";
+import { getTheme, themeCssVars, type ThemeTokens } from "@/lib/themes";
+import { extractPaletteFromUrl, applyPaletteOverride } from "@/lib/extractPalette";
 import { ThanksView } from "./ThanksView";
 import { ThanksCopyButton } from "./ThanksCopyButton";
 
@@ -28,43 +29,62 @@ export default async function ThanksPage({
     notFound();
   }
 
-  const theme = getTheme(party.theme);
+  const baseTheme = getTheme(party.theme);
+  let theme: ThemeTokens = baseTheme;
+  if (party.hero_image_url) {
+    const heroUrl = absoluteUrl(party.hero_image_url);
+    const palette = await extractPaletteFromUrl(heroUrl);
+    theme = { ...baseTheme, ...applyPaletteOverride(baseTheme, palette) };
+  }
+
   const editPath = token ? `/party/${slug}/rsvp/edit/${token}` : null;
 
   return (
     <div className="themed" style={themeCssVars(theme)}>
       <main className="mx-auto max-w-xl px-4 pt-10 pb-16 sm:px-6">
-        <div className="pp-card px-6 py-8 text-center">
-          <div className="text-5xl">{theme.emoji}</div>
-          <h1 className="mt-4 text-3xl font-bold">Yay! Your RSVP is in.</h1>
-          <p className="mt-2 text-base pp-muted">
-            The snack-counting fairies have been notified.
-          </p>
-
-          {editPath && (
-            <div className="mt-6 rounded-2xl bg-white/70 p-4 text-left">
-              <div className="text-sm font-semibold">Need to change something?</div>
-              <p className="mt-1 text-sm pp-muted">
-                Save this magic link — it lets you update your RSVP later without making an account.
-              </p>
-              <code className="mt-3 block break-all rounded-lg bg-zinc-100 p-2 text-xs">
-                {editPath}
-              </code>
-              <ThanksCopyButton path={editPath} />
-            </div>
+        <div className="pp-card overflow-hidden">
+          {party.hero_image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={party.hero_image_url}
+              alt={party.party_title}
+              className="block w-full h-auto"
+            />
           )}
+          <div className="px-6 py-8 text-center">
+            <h1 className="text-3xl font-bold">Yay! Your RSVP is in.</h1>
+            <p className="mt-2 text-base pp-muted">
+              The snack-counting fairies have been notified.
+            </p>
 
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <Link
-              href={`/party/${slug}`}
-              className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
-            >
-              Back to party
-            </Link>
+            {editPath && (
+              <div className="mt-6 rounded-2xl bg-white/70 p-4 text-left">
+                <div className="text-sm font-semibold">Need to change something?</div>
+                <p className="mt-1 text-sm pp-muted">
+                  Save this magic link — it lets you update your RSVP later without making an account.
+                </p>
+                <ThanksCopyButton path={editPath} />
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              <Link
+                href={`/party/${slug}`}
+                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+              >
+                Back to party
+              </Link>
+            </div>
           </div>
         </div>
       </main>
       <ThanksView />
     </div>
   );
+}
+
+function absoluteUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://partypost.vercel.app").replace(/\/$/, "");
+  return base + (url.startsWith("/") ? url : "/" + url);
 }
