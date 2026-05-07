@@ -112,7 +112,7 @@ function doPost(e) {
   return handle_(function () {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     const action = body.action;
-    if (action === 'submitRsvp')  return submitRsvp_(body.data || {});
+    if (action === 'submitRsvp')  return submitRsvp_(body.data || {}, body.siteUrl || '', body.slug || '');
     if (action === 'submitNote')  return submitNote_(body.data || {});
     if (action === 'editRsvp')    return editRsvp_(body.token, body.data || {});
     throw new Error('Unknown POST action: ' + action);
@@ -210,7 +210,7 @@ function getRsvpByToken_(token) {
 
 // ----- Writes -----
 
-function submitRsvp_(data) {
+function submitRsvp_(data, siteUrl, slug) {
   validateRsvp_(data);
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -251,7 +251,7 @@ function submitRsvp_(data) {
     }
 
     const settings = readSettings_(ss);
-    sendConfirmationEmails_(settings, data, editToken);
+    sendConfirmationEmails_(settings, data, editToken, siteUrl, slug);
 
     return { id: id, edit_token: editToken };
   } finally {
@@ -378,38 +378,176 @@ function validateRsvp_(d) {
   }
 }
 
-function sendConfirmationEmails_(settings, data, editToken) {
+// ----- Email helpers -----
+
+function buildPartyDate_(settings) {
+  if (!settings.date) return null;
+  const startT = settings.start_time && /^\d{1,2}:\d{2}/.test(settings.start_time)
+    ? settings.start_time.slice(0, 5) : '12:00';
+  const start = new Date(settings.date + 'T' + startT + ':00');
+  if (isNaN(start.getTime())) return null;
+  let end;
+  if (settings.end_time && /^\d{1,2}:\d{2}/.test(settings.end_time)) {
+    end = new Date(settings.date + 'T' + settings.end_time.slice(0, 5) + ':00');
+    if (isNaN(end.getTime())) end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  } else {
+    end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  }
+  return { start: start, end: end };
+}
+
+function googleCalendarUrl_(settings, partyUrl) {
+  const dates = buildPartyDate_(settings);
+  if (!dates) return '';
+  const fmt = function (d) { return Utilities.formatDate(d, 'UTC', "yyyyMMdd'T'HHmmss'Z'"); };
+  const params = [
+    'action=TEMPLATE',
+    'text=' + encodeURIComponent(settings.party_title || 'Birthday Party'),
+    'dates=' + fmt(dates.start) + '/' + fmt(dates.end),
+    'details=' + encodeURIComponent(
+      [settings.description || '', partyUrl].filter(Boolean).join('\n\n')
+    ),
+    'location=' + encodeURIComponent(
+      [settings.location_name, settings.location_address].filter(Boolean).join(', ')
+    ),
+  ];
+  return 'https://calendar.google.com/calendar/render?' + params.join('&');
+}
+
+function googleMapsUrl_(settings) {
+  const q = (settings.location_address || settings.location_name || '').trim();
+  if (!q) return '';
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+}
+
+function formatPartyDateHuman_(settings) {
+  if (!settings.date) return '';
+  const dates = buildPartyDate_(settings);
+  if (!dates) return settings.date;
+  const tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone() || 'America/New_York';
+  const dateStr = Utilities.formatDate(dates.start, tz, 'EEEE, MMMM d');
+  const startStr = settings.start_time ? Utilities.formatDate(dates.start, tz, 'h:mm a') : '';
+  const endStr = settings.end_time ? Utilities.formatDate(dates.end, tz, 'h:mm a') : '';
+  const time = startStr && endStr ? startStr + ' – ' + endStr : (startStr || '');
+  return time ? dateStr + ' · ' + time : dateStr;
+}
+
+function escapeHtml_(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function guestEmailHtml_(settings, data, partyUrl, editUrl, gcalUrl, mapsUrl) {
+  const heroImg = settings.hero_image_url || settings.banner_image_url || '';
+  const accent = '#2F80ED';
+  const ink = '#0B3A57';
+  const muted = '#3F6280';
+  const heading = '#3B2A6B';
   const partyTitle = settings.party_title || 'the party';
-  // Try to send guest confirmation. If quota exceeded or anything fails, swallow it.
+  const whenStr = formatPartyDateHuman_(settings);
+  const where = [settings.location_name, settings.location_address].filter(Boolean).join(', ');
+
+  const button = function (href, label, primary) {
+    if (!href) return '';
+    const bg = primary ? accent : '#ffffff';
+    const fg = primary ? '#ffffff' : accent;
+    const border = primary ? accent : '#cdd9e6';
+    return '<a href="' + escapeHtml_(href) + '" style="display:inline-block;margin:6px 6px 0 0;padding:10px 18px;background:' + bg + ';color:' + fg + ';text-decoration:none;border-radius:9999px;font-weight:600;border:1px solid ' + border + ';font-size:14px;">' + label + '</a>';
+  };
+
+  return ''
+    + '<div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:#eaf4fb;padding:24px 12px;color:' + ink + ';">'
+    + '<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 6px 20px rgba(15,30,60,0.10);">'
+    + (heroImg ? '<img src="' + escapeHtml_(heroImg) + '" alt="' + escapeHtml_(partyTitle) + '" style="display:block;width:100%;height:auto;">' : '')
+    + '<div style="padding:24px;">'
+    +   '<h1 style="margin:0 0 6px;font-size:24px;color:' + heading + ';font-family:Georgia,serif;">Yay! Your RSVP is in.</h1>'
+    +   '<p style="margin:0 0 18px;color:' + muted + ';font-size:15px;">The snack-counting fairies have been notified.</p>'
+    +   '<div style="background:#f4f8fb;border-radius:14px;padding:14px 18px;margin:0 0 16px;font-size:14px;line-height:1.6;">'
+    +     '<div><strong>Status:</strong> ' + escapeHtml_(data.status) + '</div>'
+    +     (data.status === 'yes'
+            ? '<div><strong>Adults:</strong> ' + Number(data.adults_count || 0) + ' · <strong>Kids:</strong> ' + Number(data.kids_count || 0) + '</div>'
+            : '')
+    +     (data.child_names ? '<div><strong>Children:</strong> ' + escapeHtml_(data.child_names) + '</div>' : '')
+    +   '</div>'
+    +   '<h2 style="margin:18px 0 6px;font-size:16px;color:' + heading + ';font-family:Georgia,serif;">' + escapeHtml_(partyTitle) + '</h2>'
+    +   (whenStr ? '<div style="color:' + muted + ';font-size:14px;">' + escapeHtml_(whenStr) + '</div>' : '')
+    +   (where ? '<div style="color:' + muted + ';font-size:14px;">' + escapeHtml_(where) + '</div>' : '')
+    +   '<div style="margin-top:20px;">'
+    +     button(partyUrl, '🎈 View party page', true)
+    +     button(gcalUrl, '📅 Add to Calendar', false)
+    +     button(mapsUrl, '📍 Map &amp; Directions', false)
+    +   '</div>'
+    +   '<div style="margin-top:24px;padding-top:18px;border-top:1px solid #e0e7ee;font-size:13px;color:' + muted + ';">'
+    +     'Need to change your RSVP? <a href="' + escapeHtml_(editUrl) + '" style="color:' + accent + ';">Update it here</a>.'
+    +   '</div>'
+    + '</div>'
+    + '</div>'
+    + '</div>';
+}
+
+function guestEmailText_(settings, data, partyUrl, editUrl, gcalUrl, mapsUrl) {
+  const partyTitle = settings.party_title || 'the party';
+  const whenStr = formatPartyDateHuman_(settings);
+  const where = [settings.location_name, settings.location_address].filter(Boolean).join(', ');
+  return [
+    'Yay! Your RSVP for ' + partyTitle + ' is in.',
+    '',
+    'Status: ' + data.status,
+    data.status === 'yes' ? 'Adults: ' + (data.adults_count || 0) + ', Kids: ' + (data.kids_count || 0) : '',
+    data.child_names ? 'Children: ' + data.child_names : '',
+    '',
+    whenStr ? 'When: ' + whenStr : '',
+    where ? 'Where: ' + where : '',
+    '',
+    partyUrl ? 'Party page: ' + partyUrl : '',
+    gcalUrl ? 'Add to Calendar: ' + gcalUrl : '',
+    mapsUrl ? 'Map & Directions: ' + mapsUrl : '',
+    '',
+    'Need to change your RSVP? ' + editUrl,
+  ].filter(Boolean).join('\n');
+}
+
+function sendConfirmationEmails_(settings, data, editToken, siteUrl, slug) {
+  const base = (siteUrl || 'https://partypost.vercel.app').replace(/\/$/, '');
+  const partyUrl = slug ? base + '/party/' + slug : base;
+  const editUrl = slug
+    ? base + '/party/' + slug + '/rsvp/edit/' + editToken
+    : base;
+  const gcalUrl = googleCalendarUrl_(settings, partyUrl);
+  const mapsUrl = googleMapsUrl_(settings);
+  const partyTitle = settings.party_title || 'the party';
+
+  // Guest confirmation
   try {
-    const subject = 'RSVP saved: ' + partyTitle;
-    const body = [
-      'Hi! Your RSVP for ' + partyTitle + ' is saved.',
-      '',
-      'Status: ' + data.status,
-      'Adults: ' + (data.adults_count || 0) + ', Kids: ' + (data.kids_count || 0),
-      settings.date ? 'When: ' + settings.date + (settings.start_time ? ' at ' + settings.start_time : '') : '',
-      settings.location_name ? 'Where: ' + settings.location_name + (settings.location_address ? ', ' + settings.location_address : '') : '',
-      '',
-      'Need to update? Use the magic edit link from the confirmation page on the website.',
-    ].filter(Boolean).join('\n');
-    MailApp.sendEmail(data.email, subject, body);
+    MailApp.sendEmail({
+      to: data.email,
+      subject: 'RSVP saved: ' + partyTitle,
+      htmlBody: guestEmailHtml_(settings, data, partyUrl, editUrl, gcalUrl, mapsUrl),
+      body: guestEmailText_(settings, data, partyUrl, editUrl, gcalUrl, mapsUrl),
+    });
   } catch (e) { /* ignore */ }
 
+  // Host notification
   if (settings.host_email) {
     try {
       const subject = 'New RSVP for ' + partyTitle + ': ' + data.parent_names + ' (' + data.status + ')';
-      const body = [
+      const lines = [
         data.parent_names + ' just RSVP\'d "' + data.status + '" for ' + partyTitle + '.',
         '',
-        'Adults: ' + (data.adults_count || 0) + ', Kids: ' + (data.kids_count || 0),
+        data.status === 'yes' ? 'Adults: ' + (data.adults_count || 0) + ', Kids: ' + (data.kids_count || 0) : '',
         'Email: ' + data.email + (data.phone ? ' · Phone: ' + data.phone : ''),
         data.child_names ? 'Children: ' + data.child_names : '',
         data.allergy_notes ? 'Allergies: ' + data.allergy_notes : '',
         data.private_note ? 'Note to host: ' + data.private_note : '',
         data.public_note ? 'Public birthday wish: ' + data.public_note : '',
+        '',
+        partyUrl ? 'Party page: ' + partyUrl : '',
       ].filter(Boolean).join('\n');
-      MailApp.sendEmail(settings.host_email, subject, body);
+      MailApp.sendEmail(settings.host_email, subject, lines);
     } catch (e) { /* ignore */ }
   }
 }

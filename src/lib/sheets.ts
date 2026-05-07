@@ -132,8 +132,14 @@ export async function fetchPartyOnly(scriptUrl: string): Promise<PartyData> {
 export async function submitRsvp(
   scriptUrl: string,
   data: unknown,
+  ctx: { siteUrl: string; slug: string },
 ): Promise<{ id: string; edit_token: string }> {
-  return callPost(scriptUrl, { action: "submitRsvp", data });
+  return callPost(scriptUrl, {
+    action: "submitRsvp",
+    data,
+    siteUrl: ctx.siteUrl,
+    slug: ctx.slug,
+  });
 }
 
 export async function editRsvp(

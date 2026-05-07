@@ -119,7 +119,10 @@ export function RsvpForm({
         router.refresh();
         return;
       }
-      const result = await submitRsvp(scriptUrl, values);
+      const result = await submitRsvp(scriptUrl, values, {
+        siteUrl: window.location.origin,
+        slug,
+      });
       router.push(`/party/${slug}/rsvp/thanks?t=${encodeURIComponent(result.edit_token)}`);
     } catch (err) {
       setSubmitError(
