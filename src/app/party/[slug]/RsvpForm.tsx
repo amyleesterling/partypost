@@ -171,7 +171,7 @@ export function RsvpForm({
         <Field label="Your name(s)" error={errors.parent_names?.message}>
           <input
             className="pp-input"
-            placeholder="Alex & Sam Chen"
+            placeholder="Amy & Will Sterling"
             {...register("parent_names")}
           />
         </Field>
