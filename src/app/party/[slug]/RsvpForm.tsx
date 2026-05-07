@@ -1,11 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import confetti from "canvas-confetti";
 import { rsvpSchema, type RsvpInput, type RsvpOutput } from "@/lib/validation";
 import { editRsvp, submitRsvp, type RsvpRecord } from "@/lib/sheets";
+
+const NO_LINES = [
+  "🧁 Aw, more cupcakes for us!",
+  "🥺 We&rsquo;ll miss you — saving you some frosting.",
+  "💔 Boooo. We&rsquo;ll send pics of the chaos.",
+  "🎈 Extra balloons for everyone else, then.",
+  "👀 You sure? There will be pizza.",
+  "🦀 The crab on the invite is sad now.",
+];
 
 export function RsvpForm({
   slug,
@@ -45,6 +55,55 @@ export function RsvpForm({
 
   const status = watch("status");
   const isEdit = !!editToken;
+  const fieldsetRef = useRef<HTMLFieldSetElement>(null);
+  const prevStatusRef = useRef<"yes" | "no" | null>(null);
+  const [noToast, setNoToast] = useState<string | null>(null);
+  const noToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = status;
+    if (prev === null || prev === status) return;
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const styles = getComputedStyle(document.documentElement);
+    const accent = styles.getPropertyValue("--accent").trim() || "#E94F8A";
+    const secondary = styles.getPropertyValue("--secondary").trim() || "#FFD166";
+    const colors = [accent, secondary, "#ffffff"];
+
+    if (status === "yes") {
+      const rect = fieldsetRef.current?.getBoundingClientRect();
+      const origin = rect
+        ? {
+            x: (rect.left + rect.width / 2) / window.innerWidth,
+            y: (rect.top + rect.height / 2) / window.innerHeight,
+          }
+        : { y: 0.4 };
+      confetti({
+        particleCount: 70,
+        spread: 80,
+        startVelocity: 35,
+        ticks: 200,
+        origin,
+        colors,
+        scalar: 0.95,
+      });
+      if (noToastTimer.current) clearTimeout(noToastTimer.current);
+      setNoToast(null);
+    } else if (status === "no") {
+      const line = NO_LINES[Math.floor(Math.random() * NO_LINES.length)];
+      setNoToast(line);
+      if (noToastTimer.current) clearTimeout(noToastTimer.current);
+      noToastTimer.current = setTimeout(() => setNoToast(null), 2800);
+    }
+  }, [status]);
+
+  useEffect(() => {
+    return () => {
+      if (noToastTimer.current) clearTimeout(noToastTimer.current);
+    };
+  }, []);
 
   const onSubmit: SubmitHandler<RsvpOutput> = async (values) => {
     setSubmitError(null);
@@ -74,18 +133,22 @@ export function RsvpForm({
         </div>
       )}
 
-      <fieldset>
+      <fieldset ref={fieldsetRef}>
         <legend className="text-sm font-semibold">Will you be there?</legend>
         <div className="mt-2 grid grid-cols-2 gap-2">
           {(["yes", "no"] as const).map((s) => (
             <label
               key={s}
-              className={`flex cursor-pointer items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium ${
+              className={`flex cursor-pointer items-center justify-center rounded-2xl border px-3 py-3.5 text-sm font-semibold transition-all duration-200 ${
                 status === s
-                  ? "border-transparent text-white"
-                  : "border-zinc-300 bg-white text-zinc-800"
+                  ? "border-transparent text-white shadow-lg"
+                  : "border-zinc-300 bg-white text-zinc-800 hover:border-zinc-400 hover:shadow-sm"
               }`}
-              style={status === s ? { background: "var(--accent)" } : undefined}
+              style={
+                status === s
+                  ? { background: "var(--accent)", transform: "translateY(-1px)" }
+                  : undefined
+              }
             >
               <input type="radio" value={s} className="sr-only" {...register("status")} />
               {s === "yes" && "✨ Yes!"}
@@ -93,6 +156,15 @@ export function RsvpForm({
             </label>
           ))}
         </div>
+        {noToast && (
+          <div
+            className="pp-pop mt-3 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-center text-sm font-medium text-zinc-800 shadow-md"
+            role="status"
+            aria-live="polite"
+          >
+            {noToast.replace(/&rsquo;/g, "’")}
+          </div>
+        )}
       </fieldset>
 
       <div className="grid gap-4 sm:grid-cols-2">
