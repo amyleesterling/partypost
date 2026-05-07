@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/service";
+import { findParty } from "@/config/parties";
+import { fetchPartyOnly, fetchRsvpByToken } from "@/lib/sheets";
 import { getTheme, themeCssVars } from "@/lib/themes";
 import { RsvpForm } from "../../../RsvpForm";
 
@@ -8,21 +9,19 @@ type Params = { slug: string; token: string };
 
 export default async function EditRsvpPage({ params }: { params: Promise<Params> }) {
   const { slug, token } = await params;
-  const svc = createServiceClient();
+  const entry = findParty(slug);
+  if (!entry) notFound();
 
-  const { data: rsvp } = await svc
-    .from("rsvps")
-    .select("*")
-    .eq("edit_token", token)
-    .maybeSingle();
-  if (!rsvp) notFound();
-
-  const { data: party } = await svc
-    .from("parties")
-    .select("*")
-    .eq("id", rsvp.party_id)
-    .maybeSingle();
-  if (!party || party.slug !== slug || !party.is_published) notFound();
+  let party;
+  let rsvp;
+  try {
+    [party, rsvp] = await Promise.all([
+      fetchPartyOnly(entry.scriptUrl),
+      fetchRsvpByToken(entry.scriptUrl, token),
+    ]);
+  } catch {
+    notFound();
+  }
 
   const theme = getTheme(party.theme);
 
@@ -38,7 +37,7 @@ export default async function EditRsvpPage({ params }: { params: Promise<Params>
             For {party.party_title}. Changes save instantly.
           </p>
           <div className="mt-5">
-            <RsvpForm party={party} initial={rsvp} editToken={token} />
+            <RsvpForm slug={slug} scriptUrl={entry.scriptUrl} initial={rsvp} editToken={token} />
           </div>
         </div>
       </main>

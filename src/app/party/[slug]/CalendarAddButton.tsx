@@ -1,13 +1,26 @@
 "use client";
 
 import { useMemo } from "react";
-import type { PartyRow } from "@/lib/supabase/types";
+import type { PartyData } from "@/lib/sheets";
 import { googleCalendarUrl, partyToIcs } from "@/lib/ics";
 
-export function CalendarAddButton({ party }: { party: PartyRow }) {
+export function CalendarAddButton({ slug, party }: { slug: string; party: PartyData }) {
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const gcal = useMemo(() => googleCalendarUrl(party, siteUrl), [party, siteUrl]);
-  const icsContent = useMemo(() => partyToIcs(party), [party]);
+  const icsParty = useMemo(
+    () => ({
+      slug,
+      party_title: party.party_title,
+      description: party.description,
+      date: party.date,
+      start_time: party.start_time,
+      end_time: party.end_time,
+      location_name: party.location_name,
+      location_address: party.location_address,
+    }),
+    [slug, party],
+  );
+  const gcal = useMemo(() => googleCalendarUrl(icsParty, siteUrl), [icsParty, siteUrl]);
+  const icsContent = useMemo(() => partyToIcs(icsParty), [icsParty]);
 
   if (!party.date) return null;
 
@@ -16,7 +29,7 @@ export function CalendarAddButton({ party }: { party: PartyRow }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${party.slug}.ics`;
+    a.download = `${slug}.ics`;
     a.click();
     URL.revokeObjectURL(url);
   }

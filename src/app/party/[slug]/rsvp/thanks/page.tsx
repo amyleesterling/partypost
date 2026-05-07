@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { findParty } from "@/config/parties";
+import { fetchPartyOnly } from "@/lib/sheets";
 import { getTheme, themeCssVars } from "@/lib/themes";
 import { ThanksView } from "./ThanksView";
 import { ThanksCopyButton } from "./ThanksCopyButton";
@@ -17,13 +18,15 @@ export default async function ThanksPage({
 }) {
   const { slug } = await params;
   const { t: token } = await searchParams;
-  const supabase = await createClient();
-  const { data: party } = await supabase
-    .from("parties")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
-  if (!party || !party.is_published) notFound();
+  const entry = findParty(slug);
+  if (!entry) notFound();
+
+  let party;
+  try {
+    party = await fetchPartyOnly(entry.scriptUrl);
+  } catch {
+    notFound();
+  }
 
   const theme = getTheme(party.theme);
   const editPath = token ? `/party/${slug}/rsvp/edit/${token}` : null;

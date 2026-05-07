@@ -1,53 +1,47 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { PARTIES } from "@/config/parties";
 
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) redirect("/admin");
-
+export default function Home() {
   return (
     <main className="relative isolate min-h-screen overflow-hidden bg-gradient-to-br from-pink-50 via-amber-50 to-sky-50">
-      <div className="mx-auto max-w-3xl px-6 pt-16 pb-24 sm:pt-24">
+      <div className="mx-auto max-w-2xl px-6 pt-16 pb-24 sm:pt-24">
         <div className="text-5xl">🎂</div>
-        <h1 className="mt-4 font-[family-name:var(--font-playful)] text-5xl font-bold leading-tight text-zinc-900 sm:text-6xl">
-          Beautiful birthday invites,
-          <br />
-          easy RSVPs.
+        <h1 className="mt-4 font-[family-name:var(--font-playful)] text-4xl font-bold leading-tight text-zinc-900 sm:text-5xl">
+          PartyPost
         </h1>
-        <p className="mt-6 max-w-xl text-lg text-zinc-700">
-          PartyPost makes a charming little party page in minutes.
-          Share one link. Collect RSVPs. Count cupcakes. Keep the magic.
+        <p className="mt-3 text-lg text-zinc-700">
+          A tiny, cheerful birthday-party RSVP site. Each party gets its own page and a Google Sheet to collect responses.
         </p>
-        <div className="mt-10 flex flex-wrap gap-3">
-          <Link
-            href="/login"
-            className="rounded-full bg-zinc-900 px-6 py-3 text-base font-medium text-white shadow-md hover:bg-zinc-800"
-          >
-            Get started
-          </Link>
-          <Link
-            href="/login"
-            className="rounded-full border border-zinc-300 bg-white/80 px-6 py-3 text-base font-medium text-zinc-800 backdrop-blur hover:bg-white"
-          >
-            Sign in
-          </Link>
-        </div>
-        <div className="mt-16 grid gap-6 sm:grid-cols-3">
-          {[
-            { icon: "✨", title: "Polished invite page", body: "Hero image, party details, themed look." },
-            { icon: "📋", title: "Clear RSVP counts", body: "Adults, kids, allergies, totals — all live." },
-            { icon: "💌", title: "Easy guest messaging", body: "Copy-paste filtered email lists in one tap." },
-          ].map((f) => (
-            <div key={f.title} className="rounded-2xl bg-white/70 p-5 shadow-sm backdrop-blur">
-              <div className="text-2xl">{f.icon}</div>
-              <div className="mt-2 font-semibold text-zinc-900">{f.title}</div>
-              <div className="mt-1 text-sm text-zinc-600">{f.body}</div>
-            </div>
-          ))}
+
+        {PARTIES.length > 0 ? (
+          <div className="mt-10">
+            <h2 className="text-xs uppercase tracking-wider text-zinc-500">Active parties</h2>
+            <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+              {PARTIES.map((p) => (
+                <li key={p.slug}>
+                  <Link
+                    href={`/party/${p.slug}`}
+                    className="block rounded-2xl bg-white/80 p-4 shadow-sm hover:bg-white"
+                  >
+                    <div className="font-semibold text-zinc-900">/party/{p.slug}</div>
+                    <div className="mt-1 text-xs text-zinc-500">Tap to view invite</div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <div className="mt-10 rounded-2xl border border-dashed border-zinc-300 bg-white/70 p-6 text-sm text-zinc-700">
+            <div className="font-semibold">No parties yet.</div>
+            <p className="mt-2">
+              Add one in <code className="rounded bg-zinc-100 px-1">src/config/parties.ts</code>{" "}
+              after running through the setup in <code className="rounded bg-zinc-100 px-1">apps-script/SETUP.md</code>.
+            </p>
+          </div>
+        )}
+
+        <div className="mt-10 text-xs text-zinc-500">
+          Backed by Google Sheets. No accounts required for guests.
         </div>
       </div>
     </main>

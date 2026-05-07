@@ -1,17 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { NoteRow } from "@/lib/supabase/types";
-
-type PublicNote = Pick<NoteRow, "id" | "display_name" | "message" | "created_at">;
+import { submitNote, type PublicNote } from "@/lib/sheets";
 
 export function NoteWall({
-  partySlug,
-  partyId,
+  scriptUrl,
   notes,
 }: {
-  partySlug: string;
-  partyId: string;
+  scriptUrl: string;
   notes: PublicNote[];
 }) {
   const [showForm, setShowForm] = useState(false);
@@ -29,27 +25,25 @@ export function NoteWall({
       return;
     }
     setSubmitting(true);
-    const res = await fetch(`/api/public/parties/${partySlug}/notes`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ display_name: name, message, party_id: partyId }),
-    });
-    setSubmitting(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data?.error || "Couldn't post note. Please try again.");
-      return;
+    try {
+      await submitNote(scriptUrl, { display_name: name, message });
+      setSubmitted(true);
+      setName("");
+      setMessage("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't post note.");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitted(true);
-    setName("");
-    setMessage("");
   }
 
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm pp-muted">
-          {notes.length === 0 ? "Be the first to leave a wish." : `${notes.length} wish${notes.length === 1 ? "" : "es"}`}
+          {notes.length === 0
+            ? "Be the first to leave a wish."
+            : `${notes.length} wish${notes.length === 1 ? "" : "es"}`}
         </p>
         {!showForm && !submitted && (
           <button
@@ -70,10 +64,7 @@ export function NoteWall({
       )}
 
       {showForm && !submitted && (
-        <form
-          onSubmit={handleSubmit}
-          className="mb-5 pp-card p-4"
-        >
+        <form onSubmit={handleSubmit} className="mb-5 pp-card p-4">
           <input
             type="text"
             placeholder="Your name"

@@ -1,107 +1,122 @@
 # PartyPost
 
-Cheerful, lightweight birthday-party invitations and RSVPs.
-Each party gets a unique shareable link. Guests RSVP without making accounts.
-Hosts get a clean dashboard with RSVP totals, allergy notes, CSV export, and a one-click message-guests panel.
+A tiny, cheerful birthday-party invitation + RSVP site. Each party = one Google Sheet (your "database") + one Google Apps Script web app (your "API") + one entry in `src/config/parties.ts`. Guests RSVP without signing in. You see RSVPs by opening the Sheet.
+
+Built for managing kids' birthday parties — not a SaaS. No accounts, no Postgres, no monthly bill.
 
 ## Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 · Supabase (Postgres + Storage + Auth) · Resend (optional emails) · Vercel.
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 · canvas-confetti · react-hook-form + zod · **Google Sheets + Apps Script** as the backend · Vercel for hosting.
 
-## First-time setup
+## How a party works
 
-1. **Clone & install**
-   ```bash
-   git clone https://github.com/amyleesterling/partypost.git
-   cd partypost
-   npm install
-   ```
+```
+guest's phone ──→ partypost.vercel.app/party/sophia-7
+                       │
+                       ├─ Server-side: fetch party config + approved notes from Apps Script (cached 60s)
+                       │
+                       ├─ RSVP form → POST direct to Apps Script Web App URL
+                       │              → Apps Script appends row to RSVPs tab in your Sheet
+                       │              → Apps Script sends confirmation email via your Gmail
+                       │
+                       └─ Note wall   → POST direct to Apps Script
+                                       → Appends to Notes tab (is_approved=FALSE)
+                                       → You set is_approved=TRUE in the Sheet to publish
 
-2. **Create a Supabase project** at https://supabase.com (free tier is fine).
+You manage everything by opening the Google Sheet.
+```
 
-3. **Run the schema**: open Supabase → SQL Editor → paste `supabase/migrations/0001_initial.sql` → Run.
-   This creates 4 tables (`parties`, `rsvps`, `notes`, `party_images`), row-level-security policies, and the `party-images` storage bucket.
+## First-party setup (~10 min, one-time per party)
 
-4. **Enable Google OAuth**:
-   - Supabase dashboard → Authentication → Providers → Google → enable.
-   - Follow the wizard (creates a Google Cloud OAuth client).
-   - Add redirect URL: `https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback`.
-   - Add `http://localhost:3000` (for dev) and your Vercel URL (for prod) to the allowed redirect URLs in Supabase.
+Detailed walk-through in [`apps-script/SETUP.md`](apps-script/SETUP.md). The short version:
 
-5. **Env vars** — copy `.env.example` to `.env.local` and fill in:
-   - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (from Project Settings → API)
-   - `SUPABASE_SERVICE_ROLE_KEY` (same page, **server-only**, never commit)
-   - `ADMIN_EMAIL_ALLOWLIST` (your email; comma-separated for multiple, blank to allow any signed-in Google account)
-   - `RESEND_API_KEY` and `RESEND_FROM_EMAIL` (optional — confirmation emails are skipped if missing)
-   - `NEXT_PUBLIC_SITE_URL` = `http://localhost:3000` for dev, your prod URL otherwise
+1. **Create a Google Sheet** (https://sheets.new)
+2. **Extensions → Apps Script** → paste in [`apps-script/Code.gs`](apps-script/Code.gs) → Save
+3. Run **`setupSheet`** once → grants permissions, creates Settings/RSVPs/Notes tabs
+4. Fill in the **Settings tab** (party_title, date, location, theme, etc.)
+5. **Deploy → Web app**, "Execute as: Me", "Anyone has access" → copy the URL
+6. Add the slug + URL to [`src/config/parties.ts`](src/config/parties.ts)
+7. Push to GitHub → Vercel auto-deploys → party page is live at `/party/<slug>`
 
-6. **Run dev server**
-   ```bash
-   npm run dev
-   ```
-   Open http://localhost:3000 → sign in with Google → create your first party.
+## Where the data lives
 
-## Deploy to Vercel
+- **Settings** tab — all the party details (title, date, theme, etc.). Edit here to change the public page; updates show up within ~1 min.
+- **RSVPs** tab — one row per RSVP. Sort, filter, COUNTIF whatever you need. Native CSV export via File → Download.
+- **Notes** tab — birthday wishes from guests. New ones land with `is_approved=FALSE`. Set to `TRUE` for the ones you want on the public page.
 
-1. Push this repo to GitHub (already done).
-2. Import the repo at https://vercel.com.
-3. Set the same env vars in the Vercel dashboard (Project Settings → Environment Variables).
-4. Update Supabase Auth → URL Configuration → add your Vercel URL to "Redirect URLs".
-5. Update `NEXT_PUBLIC_SITE_URL` env var to your prod URL so RSVP confirmation emails contain working links.
+## What the public page has
 
-## What's in the box
-
-**Phase 1 — Bare Magic**
-- Multi-party admin dashboard, create/edit/delete parties
-- Hero + birthday-child profile image upload (Supabase Storage)
-- Public invite page at `/party/[slug]` (themed, mobile-first)
-- RSVP form: yes/maybe/no, parent + kid names, counts, allergy + private + public notes
-- Admin RSVP table with summary cards (yes/maybe/no, kid/adult totals, allergy count)
-- CSV export of RSVPs with all spec columns
-- Publish/unpublish toggle, draft mode
-- 9 themes (Default / Beach / Princess / Woodland / Space / Rainbow / Science / Garden Tea / Arcade / Dinosaur)
-
-**Phase 2 — Delight Layer**
-- Note wall: guest birthday wishes with admin moderation
-- Confetti animation on RSVP submit
-- Add to Google Calendar + .ics download
-- Magic-link RSVP edits (no account required)
-- Resend confirmation emails (guest + host) — opt-in via env var
+- Themed hero card (10 themes: beach / princess / woodland / space / rainbow / science / garden tea / arcade / dinosaur / default)
+- Birthday-child profile photo
+- Party details (when, where, RSVP-by, gifts, food, rain plan, host)
+- Tap-to-call host phone, tap-to-Google-Maps address
+- RSVP form (yes / maybe / no, kids + adults counts, allergies, private + public notes)
+- Confetti animation on submit 🎉
+- "Add to Google Calendar" + .ics download
+- Magic edit link (no account needed)
+- Birthday wishes wall (host-moderated)
 - Mobile sticky RSVP bar
-- Tap-to-call / tap-to-maps on guest details
 
-**v2 spec — Guest Messaging**
-- Messages tab: copy filtered email lists (all/yes/maybe/no) in three formats (comma / line / `Name <email>`)
-- 3 prewritten message templates (reminder / update / weather) auto-filled with party link
-- Download emails as CSV
+## Local dev
+
+```bash
+npm install
+npm run dev
+```
+
+Add at least one party to `src/config/parties.ts` first or `/` will be empty. Visit http://localhost:3000.
+
+## Deploy
+
+```bash
+git push origin main
+```
+
+Vercel auto-deploys (after you've imported the repo at vercel.com once). No env vars required.
+
+## Limits / quotas
+
+- **Apps Script email**: ~100/day from a personal Gmail account. Plenty for kids' parties — that's 100 RSVP confirmations + 100 host notifications per party per day.
+- **Apps Script execution**: 90 min/day total compute, 6 min per request. Each RSVP submit takes maybe 500ms. You'd need ~10,000 RSVPs/day to hit the daily cap.
+- **Sheets API rate**: 60 reads/min per user. The party page is cached server-side for 60s, so guests don't hit this even at moderate traffic.
 
 ## Routes
 
-Public:
-- `/` — landing
-- `/login` — Google OAuth
-- `/party/[slug]` — public invite
-- `/party/[slug]/rsvp/thanks` — confirmation
-- `/party/[slug]/rsvp/edit/[token]` — guest RSVP edit
+- `/` — landing page (lists active parties from the registry)
+- `/party/[slug]` — public invite page
+- `/party/[slug]/rsvp/thanks` — confirmation page with edit link
+- `/party/[slug]/rsvp/edit/[token]` — guest updates their own RSVP via magic token
 
-Admin (gated by middleware + email allowlist):
-- `/admin` — party list
-- `/admin/party/new` — create
-- `/admin/party/[id]` — manage (Details / Images / RSVPs / Notes / Messages / Settings tabs)
-- `/admin/party/[id]/preview` — preview unpublished page
+## Where things live in the code
 
-## Privacy
+```
+apps-script/
+├── Code.gs               # The Apps Script template (paste into each new sheet)
+└── SETUP.md              # Per-party setup walkthrough
 
-- Party pages live at unguessable slugs (e.g. `/party/sophia-7-x8k2m`).
-- Public pages never expose guest emails, phone numbers, or private notes.
-- Note wall messages require admin approval before they show publicly.
-- Image uploads are admin-only; guest uploads are not in MVP.
-- Storage RLS scopes uploads to the party's host user.
+src/
+├── config/parties.ts     # The registry: { slug → scriptUrl }
+├── lib/
+│   ├── sheets.ts         # HTTP client for the Apps Script web app
+│   ├── themes.ts         # 10 theme definitions
+│   ├── format.ts         # Date / time / address formatters
+│   ├── ics.ts            # Calendar (Google + .ics) helpers
+│   └── validation.ts     # zod schemas for RSVP form
+└── app/
+    ├── page.tsx          # Landing
+    └── party/[slug]/     # Public party page + RSVP + thanks + edit
+```
 
-## Future work (Phase 3)
+## Why Google Sheets
 
-- Reminder emails (cron job for guests who haven't RSVP'd)
+- You already have it. No DB to manage, no monthly cost.
+- The data is where you can sort/filter/share/export it natively.
+- Apps Script handles email confirmations using your Gmail quota.
+- Concurrency is fine for party-scale traffic. `LockService` serializes writes.
+
+## Future ideas (not built)
+
+- Native send for "message all yes RSVPs" via MailApp (currently you copy emails out of the Sheet)
+- Guest photo gallery after the party (Drive folder)
+- Print-friendly checklist (party favors, food counts)
 - Password-protected parties
-- Guest photo gallery (post-party)
-- Print-friendly party checklist (favors, food, snacks)
-- Native send from Messages panel

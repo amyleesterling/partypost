@@ -5,19 +5,22 @@ import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { rsvpSchema, type RsvpInput, type RsvpOutput } from "@/lib/validation";
-import type { PartyRow, RsvpRow } from "@/lib/supabase/types";
+import { editRsvp, submitRsvp, type RsvpRecord } from "@/lib/sheets";
 
 export function RsvpForm({
-  party,
+  slug,
+  scriptUrl,
   initial,
   editToken,
 }: {
-  party: PartyRow;
-  initial?: RsvpRow;
+  slug: string;
+  scriptUrl: string;
+  initial?: RsvpRecord;
   editToken?: string;
 }) {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [savedFlash, setSavedFlash] = useState(false);
 
   const {
     register,
@@ -46,35 +49,32 @@ export function RsvpForm({
 
   const onSubmit: SubmitHandler<RsvpOutput> = async (values) => {
     setSubmitError(null);
-    const url = isEdit ? `/api/rsvps/${editToken}` : `/api/public/parties/${party.slug}/rsvps`;
-    const method = isEdit ? "PATCH" : "POST";
-
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setSubmitError(data?.error || "Something went wrong. Please try again.");
-      return;
+    try {
+      if (isEdit && editToken) {
+        await editRsvp(scriptUrl, editToken, values);
+        setSavedFlash(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        setTimeout(() => setSavedFlash(false), 2500);
+        router.refresh();
+        return;
+      }
+      const result = await submitRsvp(scriptUrl, values);
+      router.push(`/party/${slug}/rsvp/thanks?t=${encodeURIComponent(result.edit_token)}`);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again.",
+      );
     }
-
-    const data = await res.json();
-    if (isEdit) {
-      router.refresh();
-      // Stay on edit page with a success flash.
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    const token: string = data.edit_token;
-    router.push(`/party/${party.slug}/rsvp/thanks?t=${token}`);
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+      {savedFlash && (
+        <div className="rounded-2xl bg-emerald-50 p-3 text-sm text-emerald-900">
+          Updated! Your RSVP is saved.
+        </div>
+      )}
+
       <fieldset>
         <legend className="text-sm font-semibold">Will you be there?</legend>
         <div className="mt-2 grid grid-cols-3 gap-2">

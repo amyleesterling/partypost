@@ -1,35 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import type { NoteRow, PartyRow } from "@/lib/supabase/types";
+import { useEffect, useState } from "react";
+import type { PartyData, PublicNote } from "@/lib/sheets";
 import { formatPartyDateLong, formatTimeRange, googleMapsUrl } from "@/lib/format";
 import { RsvpForm } from "./RsvpForm";
 import { NoteWall } from "./NoteWall";
 import { CalendarAddButton } from "./CalendarAddButton";
 import { StickyRsvpBar } from "./StickyRsvpBar";
 
-type PublicNote = Pick<NoteRow, "id" | "display_name" | "message" | "created_at">;
-
 export function PublicPartyView({
+  slug,
+  scriptUrl,
   party,
   notes,
   themeEmoji,
   themeName,
 }: {
-  party: PartyRow;
+  slug: string;
+  scriptUrl: string;
+  party: PartyData;
   notes: PublicNote[];
   themeEmoji: string;
   themeName: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
 
-  if (typeof window !== "undefined") {
-    window.addEventListener(
-      "scroll",
-      () => setScrolled(window.scrollY > 240),
-      { passive: true, once: true },
-    );
-  }
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 240);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const dateStr = formatPartyDateLong(party.date);
   const timeStr = formatTimeRange(party.start_time, party.end_time);
@@ -57,7 +58,7 @@ export function PublicPartyView({
           <h1 className="mt-2 text-3xl font-bold leading-tight sm:text-4xl">
             {party.party_title}
           </h1>
-          {party.birthday_age != null && party.birthday_age > 0 && (
+          {party.birthday_age != null && Number(party.birthday_age) > 0 && (
             <div
               className="mt-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold"
               style={{ background: "var(--secondary)", color: "var(--ink)" }}
@@ -139,7 +140,7 @@ export function PublicPartyView({
           )}
         </dl>
         <div className="mt-4 flex flex-wrap gap-2">
-          <CalendarAddButton party={party} />
+          <CalendarAddButton slug={slug} party={party} />
         </div>
       </section>
 
@@ -149,13 +150,13 @@ export function PublicPartyView({
           Let us know who&apos;s coming so we can plan snacks, cupcakes, and tiny celebratory logistics.
         </p>
         <div className="mt-5">
-          <RsvpForm party={party} />
+          <RsvpForm slug={slug} scriptUrl={scriptUrl} />
         </div>
       </section>
 
       <section className="mt-8">
         <h2 className="mb-3 text-lg font-semibold">Birthday wishes</h2>
-        <NoteWall partySlug={party.slug} partyId={party.id} notes={notes} />
+        <NoteWall scriptUrl={scriptUrl} notes={notes} />
       </section>
 
       <footer className="mt-10 text-center text-xs pp-muted">
