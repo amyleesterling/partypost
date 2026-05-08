@@ -97,7 +97,7 @@ const AI_PARTY_FIXTURE: PartyFixture = {
     rain_plan: "Indoors regardless — datacenters have weather regulation.",
     theme: "science",
     invite_image_url: "/ai-party-invite.svg",
-    banner_image_url: "/ai-party-banner.svg",
+    banner_image_url: "/ai-party-banner.png",
     profile_image_url: null,
   },
   notes: [
