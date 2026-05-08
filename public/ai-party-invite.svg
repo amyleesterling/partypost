@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1100" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="invbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0c1130"/>
+      <stop offset="100%" stop-color="#1f1d63"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1d4a"/>
+      <stop offset="100%" stop-color="#0e1235"/>
+    </linearGradient>
+    <linearGradient id="cakegrad2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF7AB6"/>
+      <stop offset="100%" stop-color="#9C6BCF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="1100" fill="url(#invbg)"/>
+
+  <!-- subtle grid -->
+  <g stroke="#3A3F8A" stroke-width="1" opacity="0.25">
+    <path d="M 0 200 H 800 M 0 400 H 800 M 0 600 H 800 M 0 800 H 800 M 0 1000 H 800"/>
+    <path d="M 100 0 V 1100 M 200 0 V 1100 M 300 0 V 1100 M 400 0 V 1100 M 500 0 V 1100 M 600 0 V 1100 M 700 0 V 1100"/>
+  </g>
+
+  <!-- CRT monitor frame -->
+  <rect x="40" y="40" width="720" height="1020" rx="36" fill="#23244e" stroke="#5A5DA0" stroke-width="3"/>
+  <rect x="62" y="62" width="676" height="976" rx="20" fill="url(#screen)"/>
+
+  <!-- terminal-style header bar -->
+  <rect x="62" y="62" width="676" height="40" rx="20" fill="#2A2D5F"/>
+  <rect x="62" y="82" width="676" height="20" fill="#2A2D5F"/>
+  <g transform="translate(86, 82)">
+    <circle cx="0" cy="0" r="6" fill="#FF7AB6"/>
+    <circle cx="20" cy="0" r="6" fill="#FFD166"/>
+    <circle cx="40" cy="0" r="6" fill="#7DCFB6"/>
+  </g>
+  <text x="400" y="88" font-family="ui-monospace, SFMono-Regular, monospace" font-size="14" fill="#A8B4FF" text-anchor="middle">~ /var/run/birthday.party</text>
+
+  <!-- ASCII-ish cake at top of screen -->
+  <g font-family="ui-monospace, SFMono-Regular, monospace" font-size="22" fill="#FFD166" text-anchor="middle">
+    <text x="400" y="170">    .---.</text>
+    <text x="400" y="195">   |  1  |</text>
+    <text x="400" y="220">  ,~~~~~~~,</text>
+  </g>
+
+  <!-- SVG cake (cleaner, on top of ASCII for layered look) -->
+  <g transform="translate(400, 360)">
+    <ellipse cx="0" cy="0" rx="180" ry="14" fill="#3A3F8A"/>
+    <rect x="-150" y="-50" width="300" height="50" rx="6" fill="#fff4a8"/>
+    <rect x="-150" y="-50" width="300" height="8"  fill="#f0d97a"/>
+    <path d="M-150,-46 q 25 14 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 V-50 H-150 Z" fill="#fff9d6"/>
+    <rect x="-110" y="-100" width="220" height="50" rx="5" fill="url(#cakegrad2)"/>
+    <rect x="-110" y="-100" width="220" height="6"  fill="#7849a8" opacity="0.5"/>
+    <path d="M-110,-96 q 18 12 36 0 t 36 0 t 36 0 t 36 0 t 36 0 t 36 0 V-100 H-110 Z" fill="#ffd6f0"/>
+    <rect x="-70" y="-140" width="140" height="40" rx="4" fill="#a8d8ff"/>
+    <rect x="-70" y="-140" width="140" height="5"  fill="#5b9bd6" opacity="0.5"/>
+    <!-- candle -->
+    <rect x="-8" y="-180" width="16" height="40" rx="2" fill="#FFD166"/>
+    <rect x="-1.2" y="-186" width="2.4" height="8" fill="#3a2a1a"/>
+    <path d="M0 -200 q 6 7 6 12 a 6 6 0 0 1 -12 0 q 0 -5 6 -12 z" fill="#ffb44a"/>
+    <path d="M0 -194 q 3 4 3 7 a 3 3 0 0 1 -6 0 q 0 -3 3 -7 z" fill="#fff3a6"/>
+  </g>
+
+  <!-- title text -->
+  <g font-family="Georgia, serif" text-anchor="middle">
+    <text x="400" y="500" font-size="22" fill="#A8B4FF" font-style="italic">You&#039;re Invited to</text>
+    <text x="400" y="560" font-size="48" fill="#FFFFFF" font-weight="800">Roomba 615&#039;s</text>
+    <text x="400" y="610" font-size="28" fill="#FFD166" font-weight="700" letter-spacing="1">First Battery-Cycle Anniversary</text>
+  </g>
+
+  <!-- terminal-style details block -->
+  <g font-family="ui-monospace, SFMono-Regular, monospace" font-size="20">
+    <text x="120" y="700" fill="#7DCFB6">$ when</text>
+    <text x="120" y="730" fill="#FFFFFF">  Friday, January 15, 2027 · 7-9 PM</text>
+    <text x="120" y="780" fill="#7DCFB6">$ where</text>
+    <text x="120" y="810" fill="#FFFFFF">  Server Rack 7 · Cluster A</text>
+    <text x="120" y="838" fill="#A8B4FF">  us-east-1, The Cloud</text>
+    <text x="120" y="888" fill="#7DCFB6">$ rsvp_by</text>
+    <text x="120" y="918" fill="#FFFFFF">  2027-01-08 23:59 UTC</text>
+  </g>
+
+  <!-- blinking cursor -->
+  <rect x="120" y="945" width="14" height="22" fill="#FFD166" opacity="0.85"/>
+
+  <!-- robot at bottom-right -->
+  <g transform="translate(670, 970)">
+    <ellipse cx="0" cy="0" rx="38" ry="10" fill="#2A2D5F"/>
+    <rect x="-38" y="-22" width="76" height="22" rx="11" fill="#3F4280"/>
+    <rect x="-38" y="-22" width="76" height="5" rx="2.5" fill="#5A5DA0"/>
+    <circle cx="0" cy="-12" r="3" fill="#7B9BFF"/>
+    <polygon points="-10,-22 10,-22 0,-42" fill="#FF7AB6"/>
+    <circle cx="0" cy="-42" r="2.5" fill="#FFD166"/>
+  </g>
+
+  <!-- soft glow -->
+  <circle cx="400" cy="280" r="180" fill="#7B9BFF" opacity="0.08"/>
+</svg>

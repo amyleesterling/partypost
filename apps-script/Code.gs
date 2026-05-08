@@ -66,6 +66,22 @@ const INVITE_HEADERS = [
 
 // ----- One-time setup -----
 
+/**
+ * Adds a "🎉 PartyPost" menu to the Sheet so the host can run setup and
+ * see helpful info without ever opening the Apps Script editor again.
+ * Triggered automatically every time the Sheet is opened.
+ */
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('🎉 PartyPost')
+    .addItem('1. Set up tabs', 'setupSheet')
+    .addItem('2. Show Web App URL', 'showWebAppUrl')
+    .addItem('3. Send pending invitations', 'sendPendingInvitations')
+    .addSeparator()
+    .addItem("What's left to fill in?", 'showSetupChecklist')
+    .addToUi();
+}
+
 function setupSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss) throw new Error('Open the bound Google Sheet, then run setupSheet from there.');
@@ -80,9 +96,58 @@ function setupSheet() {
   if (def && def.getLastRow() === 0) ss.deleteSheet(def);
 
   SpreadsheetApp.getActive().toast(
-    'PartyPost tabs ready! Edit Settings → then Deploy as Web App.',
+    'PartyPost tabs ready! Fill in Settings → then Deploy as Web App.',
     'PartyPost', 5
   );
+}
+
+/** Show the deployed Web App URL in a friendly dialog. Helpful for hosts
+ *  who already deployed but forgot to copy the URL. */
+function showWebAppUrl() {
+  const url = ScriptApp.getService().getUrl();
+  const ui = SpreadsheetApp.getUi();
+  if (!url) {
+    ui.alert(
+      'No deployment yet',
+      'You need to deploy first: Apps Script editor → Deploy → New deployment → Web app, "Execute as: Me", "Anyone has access" → Deploy.',
+      ui.ButtonSet.OK,
+    );
+    return;
+  }
+  ui.alert(
+    'Your party Web App URL',
+    'Copy this and paste it into PRIVATE_PARTIES_JSON on Vercel as scriptUrl:\n\n' + url,
+    ui.ButtonSet.OK,
+  );
+}
+
+/** Quick "what's missing?" check so a non-technical host can see at a
+ *  glance whether their Settings are filled in correctly. */
+function showSetupChecklist() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ui = SpreadsheetApp.getUi();
+  let settings;
+  try {
+    settings = readSettings_(ss);
+  } catch (e) {
+    ui.alert('Tabs not set up yet', 'Run "1. Set up tabs" first.', ui.ButtonSet.OK);
+    return;
+  }
+  const required = ['party_title', 'date', 'start_time', 'location_name', 'slug'];
+  const optional = ['birthday_child_name', 'host_email', 'invite_image_url', 'banner_image_url'];
+  const missing = required.filter(function (k) { return !settings[k]; });
+  const optMissing = optional.filter(function (k) { return !settings[k]; });
+
+  let msg = '';
+  if (missing.length === 0) {
+    msg += '✓ All required Settings are filled in!\n\n';
+  } else {
+    msg += '✗ Missing required Settings:\n  • ' + missing.join('\n  • ') + '\n\n';
+  }
+  if (optMissing.length) {
+    msg += 'Optional (nice to have):\n  • ' + optMissing.join('\n  • ');
+  }
+  ui.alert('Settings checklist', msg, ui.ButtonSet.OK);
 }
 
 function ensureSettingsTab_(ss) {

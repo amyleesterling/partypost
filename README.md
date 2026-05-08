@@ -4,7 +4,10 @@
 
 A **FREE** Paperless-Post-style invite site for kids' birthday parties. Each party gets a beautiful page; RSVPs land in a Google Sheet you own. No monthly bill. No accounts for guests.
 
-**Live demo:** [partypost.vercel.app/party/demo](https://partypost.vercel.app/party/demo)
+**Live demos:**
+[partypost.vercel.app/party/demo](https://partypost.vercel.app/party/demo) (a beach party)
+·
+[partypost.vercel.app/party/ai-party](https://partypost.vercel.app/party/ai-party) (a robot's birthday — yes, really)
 
 You don't need to be a developer. Any AI assistant (Claude Code, ChatGPT, Cursor, etc.) can get this running for you in 10 minutes. Follow the two steps below.
 
@@ -12,7 +15,9 @@ You don't need to be a developer. Any AI assistant (Claude Code, ChatGPT, Cursor
 
 ## Step 1 — Set up the site
 
-Copy this into your AI assistant with your own party details:
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Famyleesterling%2Fpartypost)
+
+Click that button → connect Vercel to your GitHub → click Deploy. ~90 seconds and you've got a live site at `your-name.vercel.app`. Now paste this into your AI assistant with your own party details:
 
 ```
 Use this repository to make my kid's birthday party invitation:
@@ -25,7 +30,7 @@ Time: [TIME]
 Location: [LOCATION]
 ```
 
-The AI will walk you through forking the repo, deploying on Vercel, creating the Google Sheet for your party, and wiring it all together. **~10 minutes for the first party, ~5 minutes for each one after.**
+The AI will walk you through creating a Google Sheet for your party, pasting the script, and pasting **one** JSON line into your Vercel Environment Variables. **No code editing.** ~10 min for the first party, ~5 min for each one after.
 
 Click-by-click reference: [`apps-script/SETUP.md`](apps-script/SETUP.md).
 
@@ -69,13 +74,14 @@ Save the generated image, then tell your AI to use it as the party banner.
 
 ## Where the data lives
 
-Make a new Google Sheet called [kids Birthday Party]. All your informtation lives in different tabs, principally **RSVPs**. Edit the **Settings** tab to change anything on the public page (changes show up within a minute).
+Your Google Sheet's tabs:
 
-For most parties, the Sheet **is** your admin:
-- See RSVPs → **RSVPs** tab
-- Add invitees → type names + emails into rows in the **Invitations** tab
-- Send invitation emails → from the Apps Script editor, run `sendPendingInvitations`
-- Approve/hide birthday wishes → toggle `is_approved` in the **Notes** tab
+- **Settings** — party details (title, date, location, theme, etc.). Edit any time; changes appear on the public page within ~1 minute.
+- **RSVPs** — one row per RSVP. Sort, filter, COUNTIF, export to CSV — all native Sheets.
+- **Invitations** — invitee tracking (sent / opened / clicked / RSVPd).
+- **Notes** — birthday wishes from guests. Toggle `is_approved` to publish.
+
+For most parties, the Sheet **is** your admin. The new `🎉 PartyPost` menu in your Sheet (added automatically when you open it) gives you one-click access to "Set up tabs", "Show Web App URL", "Send pending invitations", and a "What's left to fill in?" checklist — without ever opening the Apps Script editor again.
 
 ## Optional — Admin dashboard for sending invites
 
@@ -101,6 +107,6 @@ To use this, you'll need three free accounts (none of them charge a cent for wha
 
 - **[Google Drive](https://drive.google.com)** — every party needs a new Google spreadsheet that serves as the database for RSVPs.
 - **[Vercel](https://vercel.com)** — hosts your party page on the public internet, free tier.
-- **[GitHub](https://github.com)** — where the code lives. You'll fork this repo so you have your own copy.
+- **[GitHub](https://github.com)** — where the code lives. The Deploy button above forks the repo into your account automatically.
 
 Sign up for any you don't already have — your AI assistant will walk you through using all three.
