@@ -86,16 +86,16 @@
     .pill-yes     { background: #d6efe0; color: var(--ok); }
     .pill-no      { background: #efdedb; color: #a3373a; }
 
-    textarea {
+    textarea, input[type="text"], input[type="email"] {
       width: 100%;
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 10px 12px;
       font-size: 14px;
       font-family: inherit;
-      resize: vertical;
     }
-    textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    textarea { resize: vertical; }
+    textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
     button {
       cursor: pointer;
@@ -158,16 +158,40 @@
     </section>
 
     <section class="card">
-      <h2>Send invitations</h2>
+      <h2>Add an invitee</h2>
+      <p class="muted">Quick add, one at a time. Duplicates are skipped automatically.</p>
+      <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:8px; align-items:end;">
+        <div>
+          <label class="small" style="display:block; margin-bottom:4px;">Name</label>
+          <input id="single-name" type="text" placeholder="Jane Smith" />
+        </div>
+        <div>
+          <label class="small" style="display:block; margin-bottom:4px;">Email</label>
+          <input id="single-email" type="email" placeholder="jane@example.com" />
+        </div>
+        <button class="btn-primary" id="btn-add-single" onclick="addSingle()">Add</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Bulk add</h2>
       <p class="muted">
-        Paste names + emails below — one per line. Examples:<br>
+        Paste names + emails — one per line.<br>
         <code>Jane Smith jane@example.com</code> &nbsp;or&nbsp; <code>jane@example.com</code>
       </p>
       <textarea id="invitee-input" rows="5" placeholder="Jane Smith jane@example.com&#10;john@example.com"></textarea>
-      <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+      <div style="margin-top:10px;">
         <button class="btn-primary" id="btn-add" onclick="addInvitees()">Add to list</button>
-        <button class="btn-primary" id="btn-send" onclick="sendPending()" style="background:#2c8a48;box-shadow:0 6px 16px -6px rgba(44,138,72,0.6);">📨 Send to pending</button>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>Send invitations</h2>
+      <p class="muted">
+        Sends an email to everyone in the Invitees list whose status is
+        <strong>Pending</strong> (not yet sent). Already-sent people are skipped.
+      </p>
+      <button class="btn-primary" id="btn-send" onclick="sendPending()" style="background:#2c8a48;box-shadow:0 6px 16px -6px rgba(44,138,72,0.6);">📨 Send to pending</button>
     </section>
 
     <section class="card" id="invitations-card">
@@ -218,9 +242,17 @@
       toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2400);
     }
     function setBusy(busy) {
-      ['btn-add','btn-send'].forEach(function (id) {
+      ['btn-add','btn-send','btn-add-single'].forEach(function (id) {
         var b = $(id); if (b) b.disabled = busy;
       });
+    }
+
+    function addResultMessage(res) {
+      var parts = [];
+      if (res.added) parts.push('Added ' + res.added);
+      if (res.skippedDuplicate) parts.push(res.skippedDuplicate + ' already invited');
+      if (res.skippedInvalid) parts.push(res.skippedInvalid + ' invalid email' + (res.skippedInvalid === 1 ? '' : 's'));
+      return parts.length ? parts.join(' · ') : 'Nothing to add.';
     }
 
     function load() {
@@ -351,11 +383,34 @@
         .withSuccessHandler(function (res) {
           setBusy(false);
           $('invitee-input').value = '';
-          toast('Added ' + (res && res.added || 0));
+          toast(addResultMessage(res));
           load();
         })
         .withFailureHandler(function (err) { setBusy(false); toast('Error: ' + (err && err.message)); })
         .adminAddInvitees(entries);
+    }
+
+    function addSingle() {
+      var name  = $('single-name').value.trim();
+      var email = $('single-email').value.trim();
+      if (!email) { toast('Email is required.'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('Enter a valid email.'); return; }
+      setBusy(true);
+      google.script.run
+        .withSuccessHandler(function (res) {
+          setBusy(false);
+          if (res.skippedDuplicate) {
+            toast(email + ' is already invited.');
+          } else {
+            $('single-name').value = '';
+            $('single-email').value = '';
+            $('single-name').focus();
+            toast(addResultMessage(res));
+          }
+          load();
+        })
+        .withFailureHandler(function (err) { setBusy(false); toast('Error: ' + (err && err.message)); })
+        .adminAddInvitees([{ name: name, email: email }]);
     }
 
     function sendPending() {

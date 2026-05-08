@@ -290,7 +290,10 @@ function adminGetDashboard() {
   };
 }
 
-/** Append invitee rows. `invitees` is an array of {name, email}. */
+/** Append invitee rows. `invitees` is an array of {name, email}.
+ *  Skips empty/invalid emails and de-dupes against existing Invitations
+ *  tab entries (case-insensitive on email). Returns counts so the UI can
+ *  show "Added 3, 1 already invited" feedback. */
 function adminAddInvitees(invitees) {
   requireAdmin_();
   if (!Array.isArray(invitees)) throw new Error('Invitees must be an array.');
@@ -298,11 +301,35 @@ function adminAddInvitees(invitees) {
   const sheet = ss.getSheetByName(INVITES_SHEET);
   if (!sheet) throw new Error('Invitations tab missing. Run setupSheet().');
 
+  // Build a set of existing emails (lowercased, trimmed) so we don't
+  // duplicate someone already on the list.
+  const existing = {};
+  if (sheet.getLastRow() > 1) {
+    const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, INVITE_HEADERS.length).getValues();
+    rows.forEach(function (r) {
+      const e = String(r[INVITE_HEADERS.indexOf('email')] || '').trim().toLowerCase();
+      if (e) existing[e] = true;
+    });
+  }
+
   let added = 0;
+  let skippedInvalid = 0;
+  let skippedDuplicate = 0;
+  const duplicateEmails = [];
+
   invitees.forEach(function (entry) {
     const email = String((entry && entry.email) || '').trim();
     const name  = String((entry && entry.name)  || '').trim();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      skippedInvalid++;
+      return;
+    }
+    const key = email.toLowerCase();
+    if (existing[key]) {
+      skippedDuplicate++;
+      duplicateEmails.push(email);
+      return;
+    }
     sheet.appendRow([
       Utilities.getUuid(),  // id
       randomToken_(20),     // token
@@ -310,10 +337,16 @@ function adminAddInvitees(invitees) {
       email,
       '', '', '', '', '',   // sent_at, opened_at, clicked_at, rsvp_id, notes
     ]);
+    existing[key] = true; // mark added so further items in the same batch dedupe too
     added++;
   });
 
-  return { added: added };
+  return {
+    added: added,
+    skippedInvalid: skippedInvalid,
+    skippedDuplicate: skippedDuplicate,
+    duplicates: duplicateEmails,
+  };
 }
 
 /** Send invitations to anyone in the Invitations tab without sent_at. */

@@ -69,7 +69,25 @@ Save the generated image, then tell your AI to use it as the party banner.
 
 ## Where the data lives
 
-Make a new Google Sheet called [kids Birthday Party]. All your informtation lives in different tabs, principally **RSVPs**. Edit the **Settings** tab to change anything on the public page (changes show up within a minute). 
+Make a new Google Sheet called [kids Birthday Party]. All your informtation lives in different tabs, principally **RSVPs**. Edit the **Settings** tab to change anything on the public page (changes show up within a minute).
+
+For most parties, the Sheet **is** your admin:
+- See RSVPs → **RSVPs** tab
+- Add invitees → type names + emails into rows in the **Invitations** tab
+- Send invitation emails → from the Apps Script editor, run `sendPendingInvitations`
+- Approve/hide birthday wishes → toggle `is_approved` in the **Notes** tab
+
+## Optional — Admin dashboard for sending invites
+
+If you'd rather click buttons than edit a spreadsheet, you can deploy a one-page admin dashboard for your party (~3 min one-time setup). It lets you:
+
+- Add an invitee by name + email (with duplicate detection)
+- Bulk-paste a list of invitees
+- Send invitations to everyone who hasn't received one yet
+- See live status per invitee (Pending → Sent → Opened → Clicked → RSVPd)
+- Approve birthday wishes with one click
+
+Setup walkthrough: [`apps-script/SETUP.md#optional-admin-dashboard`](apps-script/SETUP.md). Skip this if your Sheet workflow is enough.
 
 ## Make it yours
 
