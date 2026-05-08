@@ -261,14 +261,16 @@ body {
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
 }
 
-/* Bottom flap — triangle pointing UP from bottom edge to envelope center */
+/* Bottom flap — triangle pointing UP from bottom edge to envelope center.
+   Same z-index as the side flaps so the three meeting flaps form a
+   uniform "envelope opening" V around the card. */
 .pp-env-bottom-flap {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, #ffd6a3, #ffba6e);
   clip-path: polygon(0 100%, 100% 100%, 50% 50%);
   border-radius: 0 0 10px 10px;
-  z-index: 1;
+  z-index: 2;
   box-shadow: inset 0 -1px 1px rgba(0,0,0,0.06);
 }
 
