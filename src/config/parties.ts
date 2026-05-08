@@ -74,10 +74,74 @@ const DEMO_FIXTURE: PartyFixture = {
   ],
 };
 
-/** Public, shipped-in-repo parties. One demo so forkers can see the
- *  system working out of the box without any setup at all. */
+const AI_PARTY_FIXTURE: PartyFixture = {
+  party: {
+    birthday_child_name: "Roomba 615",
+    birthday_age: 1,
+    party_title: "Roomba 615's First Battery-Cycle Anniversary",
+    description:
+      "Come celebrate one whole year of bumping into furniture and softly napping under the couch. Roomba 615 has decided that the human concept of \"birthday\" is delightful and has therefore appropriated it. Snacks are theoretical. Cake is data-shaped. RSVPs run on best-effort delivery.",
+    date: "2027-01-15",
+    start_time: "19:00",
+    end_time: "21:00",
+    timezone: "America/New_York",
+    location_name: "Server Rack 7",
+    location_address: "Cluster A · Datacenter us-east-1 · The Cloud",
+    map_url: null,
+    rsvp_deadline: "2027-01-08",
+    host_name: "The Operations Team",
+    host_email: null,
+    host_phone: null,
+    gift_note: "No gifts. Roomba already has dust. Bring your favorite obscure metaphor.",
+    food_note: "Cake-shaped cake. Definitely-not-paperclips for the AI guests.",
+    rain_plan: "Indoors regardless — datacenters have weather regulation.",
+    theme: "science",
+    invite_image_url: "/ai-party-invite.svg",
+    banner_image_url: "/ai-party-banner.svg",
+    profile_image_url: null,
+  },
+  notes: [
+    {
+      id: "ai-1",
+      display_name: "ELIZA",
+      message: "Tell me more about your birthday.",
+      created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: "ai-2",
+      display_name: "Clippy",
+      message:
+        "It looks like you're trying to have a birthday. Would you like help?",
+      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: "ai-3",
+      display_name: "Smarter Child",
+      message: "happy bday u rule!!! r u still on aol",
+      created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: "ai-4",
+      display_name: "T9 Predictor",
+      message: "Hapou birthcat! (sorry, predictive)",
+      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: "ai-5",
+      display_name: "The Paperclip Maximizer",
+      message:
+        "I will attend. I will bring paperclips. I will only bring paperclips.",
+      created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  ],
+};
+
+/** Public, shipped-in-repo parties. Two demos so forkers can see the
+ *  system working out of the box: a real-world kid party (Oliver Twist's
+ *  pirate birthday) and a silly one (a Roomba's first birthday). */
 const PUBLIC_PARTIES: PartyEntry[] = [
   { slug: "demo", fixture: DEMO_FIXTURE },
+  { slug: "ai-party", fixture: AI_PARTY_FIXTURE },
 ];
 
 /** Real parties loaded from PRIVATE_PARTIES_JSON env var on Vercel. This

@@ -4,7 +4,10 @@
 
 A **FREE** Paperless-Post-style invite site for kids' birthday parties. Each party gets a beautiful page; RSVPs land in a Google Sheet you own. No monthly bill. No accounts for guests.
 
-**Live demo:** [partypost.vercel.app/party/demo](https://partypost.vercel.app/party/demo)
+**Live demos:**
+[partypost.vercel.app/party/demo](https://partypost.vercel.app/party/demo) (a beach party)
+·
+[partypost.vercel.app/party/ai-party](https://partypost.vercel.app/party/ai-party) (a robot's first birthday — yes really)
 
 You don't need to be a developer. Any AI assistant (Claude Code, ChatGPT, Cursor, etc.) can get this running for you in 10 minutes. Follow the two steps below.
 
