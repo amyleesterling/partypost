@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { PARTIES } from "@/config/parties";
+import { publicParties } from "@/config/parties";
 
 export default function Home() {
+  const visible = publicParties();
   return (
     <main className="relative isolate min-h-screen overflow-hidden bg-gradient-to-br from-pink-50 via-amber-50 to-sky-50">
       <div className="mx-auto max-w-2xl px-6 pt-16 pb-24 sm:pt-24">
@@ -13,11 +14,11 @@ export default function Home() {
           A tiny, cheerful birthday-party RSVP site. Each party gets its own page and a Google Sheet to collect responses.
         </p>
 
-        {PARTIES.length > 0 ? (
+        {visible.length > 0 ? (
           <div className="mt-10">
             <h2 className="text-xs uppercase tracking-wider text-zinc-500">Active parties</h2>
             <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-              {PARTIES.map((p) => (
+              {visible.map((p) => (
                 <li key={p.slug}>
                   <Link
                     href={`/party/${p.slug}`}

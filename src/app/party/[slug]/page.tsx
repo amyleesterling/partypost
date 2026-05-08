@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { findParty } from "@/config/parties";
 import { fetchPartyBundle } from "@/lib/sheets";
 import { bannerImage } from "@/lib/partyImages";
 import { getTheme, themeCssVars, type ThemeTokens } from "@/lib/themes";
 import { extractPaletteFromUrl, applyPaletteOverride } from "@/lib/extractPalette";
 import { PublicPartyView } from "./PublicPartyView";
+import { PasswordGate } from "./PasswordGate";
 
 type Params = { slug: string };
 type SearchParams = Promise<{ i?: string }>;
@@ -22,6 +24,19 @@ export default async function PublicPartyPage({
   const { i: inviteToken } = await searchParams;
   const entry = findParty(slug);
   if (!entry) notFound();
+
+  // Password gate. Bypassed when:
+  //  - the party isn't password-protected (no passwordEnv), OR
+  //  - the visitor has a valid invitation token in the URL (?i=...), OR
+  //  - the visitor previously unlocked and has the matching cookie.
+  if (entry.passwordEnv && !inviteToken) {
+    const expected = process.env[entry.passwordEnv];
+    const cookieStore = await cookies();
+    const unlock = cookieStore.get(`pp-unlock-${slug}`)?.value;
+    if (!expected || unlock !== expected) {
+      return <PasswordGate slug={slug} />;
+    }
+  }
 
   let party;
   let notes;

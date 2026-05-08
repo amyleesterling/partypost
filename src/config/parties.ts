@@ -1,18 +1,27 @@
 import type { PartyData, PublicNote } from "@/lib/sheets";
 
-// Each party = one Google Sheet + one Apps Script web app, OR a static
-// fixture (used for the public demo so the repo can be deployed without
-// any Google setup at all). See apps-script/SETUP.md for the real-party
-// flow.
+// Each party is either:
+//  (a) a real party — backed by a Google Sheet + Apps Script web app,
+//  (b) a "demo" — static fixture so the public deployment can show the
+//      tool off without exposing real data.
+//
+// Public/demo entries live in this file (committed to the repo).
+// Private real parties live in the PRIVATE_PARTIES_JSON env var on
+// Vercel and are loaded at runtime — they don't appear in the public
+// source code, so a forker never sees your slugs or sheet URLs.
 
 export interface PartyEntry {
   slug: string;
-  /** URL of the Apps Script Web App that backs this party. Required for
-   *  real parties. Leave undefined for `fixture`-mode demo entries. */
+  /** URL of the Apps Script Web App that backs this party. */
   scriptUrl?: string;
-  /** Static demo data. When set, RSVPs and notes are not persisted —
-   *  they're acknowledged in-memory and a "demo mode" hint is shown. */
+  /** Static demo data. When set, RSVPs and notes are not persisted. */
   fixture?: PartyFixture;
+  /** Hide from any public listing (landing page, future indexes). */
+  private?: boolean;
+  /** Name of the env var holding this party's password. The actual
+   *  password is set on Vercel (never in source). When set, the public
+   *  party page renders a password gate before showing anything. */
+  passwordEnv?: string;
 }
 
 export interface PartyFixture {
@@ -62,17 +71,36 @@ const DEMO_FIXTURE: PartyFixture = {
   ],
 };
 
-export const PARTIES: PartyEntry[] = [
+/** Public, shipped-in-repo parties. */
+const PUBLIC_PARTIES: PartyEntry[] = [
   { slug: "demo", fixture: DEMO_FIXTURE },
-  // Add real parties here. Example:
-  // { slug: "sophia-7", scriptUrl: "https://script.google.com/macros/s/.../exec" },
-  {
-    slug: "sophia-7",
-    scriptUrl:
-      "https://script.google.com/macros/s/AKfycbz3cDmGpPmcIESHovbNnWJWE2cgU_4rGfeJTRks0a5EyuV5DMgIkNxDoQnqc12JfFpF/exec",
-  },
 ];
+
+/** Private parties loaded from the PRIVATE_PARTIES_JSON env var on Vercel.
+ *  Format (JSON-encoded): an array of PartyEntry objects.
+ *  Example value to set on Vercel:
+ *    [{"slug":"sophia-7","scriptUrl":"https://script.google.com/macros/s/.../exec","private":true,"passwordEnv":"PARTY_SOPHIA_7_PASSWORD"}]
+ */
+function loadPrivateParties(): PartyEntry[] {
+  try {
+    const raw = process.env.PRIVATE_PARTIES_JSON;
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as PartyEntry[];
+  } catch (err) {
+    console.warn("[partypost] Failed to parse PRIVATE_PARTIES_JSON:", err);
+    return [];
+  }
+}
+
+export const PARTIES: PartyEntry[] = [...PUBLIC_PARTIES, ...loadPrivateParties()];
 
 export function findParty(slug: string): PartyEntry | undefined {
   return PARTIES.find((p) => p.slug === slug);
+}
+
+/** Parties safe to list on public pages (landing, etc.). */
+export function publicParties(): PartyEntry[] {
+  return PARTIES.filter((p) => !p.private);
 }
