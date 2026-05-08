@@ -464,10 +464,10 @@ body {
   opacity: 0;
 }
 .pp-env-settled .pp-env-card {
-  /* Hold the final keyframe state — large + lifted UP so the fixed RSVP
+  /* Hold the final keyframe state — lifted higher so the fixed RSVP
      button at the bottom of the viewport has clear breathing room. */
   opacity: 1;
-  transform: translate(-50%, calc(-50% - 8vh)) rotate(0) scale(1.35);
+  transform: translate(-50%, calc(-50% - 10vh)) rotate(0) scale(1.2);
   box-shadow:
     0 28px 56px -14px rgba(20, 30, 60, 0.42),
     0 1px 0 rgba(0,0,0,0.04);
@@ -489,15 +489,17 @@ body {
     opacity: 0;
     transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
   }
-  12% {
+  10% {
     opacity: 1;
-    transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
+    transform: translate(-50%, -52%) rotate(90deg) scale(0.55);
+  }
+  50% {
+    /* card has slid up (still rotated sideways) — emerged out of envelope */
+    transform: translate(-50%, calc(-50% - 10vh)) rotate(90deg) scale(0.85);
   }
   100% {
-    /* one continuous, smoothly-eased transition from rotated/small to
-       upright/large/lifted. No intermediate keyframes = no rate-of-change
-       discontinuities. The cubic-bezier on the animation handles the easing. */
-    transform: translate(-50%, calc(-50% - 8vh)) rotate(0deg) scale(1.35);
+    /* rotates upright + finishes zoom in place */
+    transform: translate(-50%, calc(-50% - 10vh)) rotate(0deg) scale(1.2);
   }
 }
 
@@ -506,7 +508,9 @@ body {
    that occupies the middle of the screen. */
 .pp-env-rsvp-btn {
   position: fixed;
-  bottom: max(28px, env(safe-area-inset-bottom));
+  /* 10vh from the bottom keeps it well below the lifted card on every
+     viewport size, so it never overlaps the invitation art. */
+  bottom: max(40px, calc(env(safe-area-inset-bottom) + 4vh));
   left: 50%;
   transform: translateX(-50%);
   z-index: 70;
@@ -553,7 +557,7 @@ body {
 .pp-env-exiting .pp-env-card {
   /* keep settled transform during fade */
   opacity: 1;
-  transform: translate(-50%, calc(-50% - 8vh)) rotate(0) scale(1.35);
+  transform: translate(-50%, calc(-50% - 10vh)) rotate(0) scale(1.2);
 }
 .pp-env-exiting .pp-env-flap { transform: rotateX(-180deg); }
 
