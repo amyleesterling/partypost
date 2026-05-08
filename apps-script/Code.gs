@@ -109,6 +109,13 @@ function ensureTabWithHeaders_(ss, name, headers) {
 // ----- Web app endpoints -----
 
 function doGet(e) {
+  // Admin Web App deployment — "Execute as: Me", "Who has access: Only myself".
+  // When the deployment URL is hit, Google has already verified the visitor
+  // is the script owner (otherwise they get a Google "no access" page before
+  // ever reaching this code), so isAdmin_() resolves true and we serve the
+  // admin HTML UI instead of public party JSON.
+  if (isAdmin_()) return renderAdminHtml_();
+
   return handle_(function () {
     const action = (e && e.parameter && e.parameter.action) || 'getParty';
     if (action === 'getParty')        return getPartyData_();
@@ -132,22 +139,219 @@ function doPost(e) {
     if (action === 'submitRsvp')  return submitRsvp_(body.data || {}, body.siteUrl || '', body.slug || '', body.inviteToken || '');
     if (action === 'submitNote')  return submitNote_(body.data || {});
     if (action === 'editRsvp')    return editRsvp_(body.token, body.data || {});
-    // Admin actions — all require a matching ADMIN_KEY script property.
-    if (action === 'adminListInvitations') return adminListInvitations_(body.key || '');
-    if (action === 'adminAddInvitees')     return adminAddInvitees_(body.key || '', body.invitees || []);
-    if (action === 'adminSendPending')     return adminSendPending_(body.key || '');
     throw new Error('Unknown POST action: ' + action);
   });
 }
 
-function _checkAdminKey_(provided) {
-  const expected = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
-  if (!expected) {
-    throw new Error("Admin not configured. Set ADMIN_KEY in Project Settings → Script properties.");
+// ----- Admin auth: Google sign-in via deployment access settings -----
+// The admin Web App is deployed with "Only myself" access, so Google won't
+// route a request here unless the caller is signed in as the script owner.
+// Inside the script, getActiveUser() === getEffectiveUser() proves it.
+
+function isAdmin_() {
+  try {
+    const active = Session.getActiveUser().getEmail();
+    const effective = Session.getEffectiveUser().getEmail();
+    return !!active && active === effective;
+  } catch (_e) {
+    return false;
   }
-  if (String(provided || '') !== expected) {
-    throw new Error("Wrong password.");
+}
+
+function requireAdmin_() {
+  if (!isAdmin_()) {
+    throw new Error("Not authorized. The admin URL must be deployed with 'Only myself' access.");
   }
+}
+
+function renderAdminHtml_() {
+  return HtmlService.createHtmlOutputFromFile('admin')
+    .setTitle('PartyPost Admin')
+    .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+// ----- Admin functions callable from admin.html via google.script.run -----
+
+/** Return everything the admin page needs in one call: settings summary,
+ *  invitations list, RSVP totals, pending notes. */
+function adminGetDashboard() {
+  requireAdmin_();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const settings = readSettings_(ss);
+
+  const rsvpsSheet = ss.getSheetByName(RSVPS_SHEET);
+  const rsvps = (rsvpsSheet && rsvpsSheet.getLastRow() > 1)
+    ? rsvpsSheet.getRange(2, 1, rsvpsSheet.getLastRow() - 1, RSVP_HEADERS.length)
+        .getValues().map(rowToObj_(RSVP_HEADERS))
+    : [];
+
+  const yes = rsvps.filter(function (r) { return r.status === 'yes'; });
+  const no  = rsvps.filter(function (r) { return r.status === 'no'; });
+  const kidsTotal   = yes.reduce(function (s, r) { return s + Number(r.kids_count || 0); }, 0);
+  const adultsTotal = yes.reduce(function (s, r) { return s + Number(r.adults_count || 0); }, 0);
+
+  const invSheet = ss.getSheetByName(INVITES_SHEET);
+  const invitations = (invSheet && invSheet.getLastRow() > 1)
+    ? invSheet.getRange(2, 1, invSheet.getLastRow() - 1, INVITE_HEADERS.length)
+        .getValues()
+        .map(rowToObj_(INVITE_HEADERS))
+        .map(function (row) {
+          return {
+            id: row.id || '',
+            name: row.name || '',
+            email: row.email || '',
+            sent_at:    row.sent_at    instanceof Date ? row.sent_at.toISOString()    : (row.sent_at    || ''),
+            opened_at:  row.opened_at  instanceof Date ? row.opened_at.toISOString()  : (row.opened_at  || ''),
+            clicked_at: row.clicked_at instanceof Date ? row.clicked_at.toISOString() : (row.clicked_at || ''),
+            rsvp_id: row.rsvp_id || '',
+            notes: row.notes || '',
+          };
+        })
+    : [];
+
+  const notesSheet = ss.getSheetByName(NOTES_SHEET);
+  const notes = (notesSheet && notesSheet.getLastRow() > 1)
+    ? notesSheet.getRange(2, 1, notesSheet.getLastRow() - 1, NOTE_HEADERS.length)
+        .getValues()
+        .map(rowToObj_(NOTE_HEADERS))
+        .map(function (n) {
+          return {
+            id: n.id,
+            display_name: n.display_name,
+            message: n.message,
+            is_public: !!truthy_(n.is_public),
+            is_approved: !!truthy_(n.is_approved),
+            created_at: n.created_at instanceof Date ? n.created_at.toISOString() : (n.created_at || ''),
+          };
+        })
+    : [];
+
+  return {
+    party: {
+      title:    settings.party_title || '',
+      child:    settings.birthday_child_name || '',
+      date:     settings.date || '',
+      slug:     settings.slug || '',
+    },
+    rsvps: {
+      total:   rsvps.length,
+      yes:     yes.length,
+      no:      no.length,
+      kids:    kidsTotal,
+      adults:  adultsTotal,
+      details: rsvps.map(function (r) {
+        return {
+          status: r.status,
+          parent_names: r.parent_names,
+          email: r.email,
+          kids_count: Number(r.kids_count || 0),
+          adults_count: Number(r.adults_count || 0),
+          allergy_notes: r.allergy_notes || '',
+          private_note: r.private_note || '',
+          created_at: r.created_at instanceof Date ? r.created_at.toISOString() : (r.created_at || ''),
+        };
+      }),
+    },
+    invitations: invitations,
+    notes: notes,
+  };
+}
+
+/** Append invitee rows. `invitees` is an array of {name, email}. */
+function adminAddInvitees(invitees) {
+  requireAdmin_();
+  if (!Array.isArray(invitees)) throw new Error('Invitees must be an array.');
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(INVITES_SHEET);
+  if (!sheet) throw new Error('Invitations tab missing. Run setupSheet().');
+
+  let added = 0;
+  invitees.forEach(function (entry) {
+    const email = String((entry && entry.email) || '').trim();
+    const name  = String((entry && entry.name)  || '').trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+    sheet.appendRow([
+      Utilities.getUuid(),  // id
+      randomToken_(20),     // token
+      name,
+      email,
+      '', '', '', '', '',   // sent_at, opened_at, clicked_at, rsvp_id, notes
+    ]);
+    added++;
+  });
+
+  return { added: added };
+}
+
+/** Send invitations to anyone in the Invitations tab without sent_at. */
+function adminSendPending() {
+  requireAdmin_();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const settings = readSettings_(ss);
+  const slug = (settings.slug || '').trim();
+  if (!slug) throw new Error('Settings.slug is required. Add a "slug" row in the Settings tab.');
+
+  const siteUrl = _readSiteUrl_();
+  const scriptUrl = ScriptApp.getService().getUrl();
+  const sheet = ss.getSheetByName(INVITES_SHEET);
+  if (!sheet) throw new Error('Invitations tab missing. Run setupSheet().');
+
+  const last = sheet.getLastRow();
+  if (last < 2) return { sent: 0, skipped: 0 };
+  const rows = sheet.getRange(2, 1, last - 1, INVITE_HEADERS.length).getValues();
+
+  let sent = 0, skipped = 0;
+  for (let i = 0; i < rows.length; i++) {
+    const row = rowToObj_(INVITE_HEADERS)(rows[i]);
+    if (row.sent_at) continue;
+    if (!row.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(row.email).trim())) {
+      skipped++;
+      continue;
+    }
+    const id    = row.id    || Utilities.getUuid();
+    const token = row.token || randomToken_(20);
+    try {
+      sendInvitationEmail_({
+        settings: settings,
+        siteUrl: siteUrl,
+        scriptUrl: scriptUrl,
+        slug: slug,
+        name: row.name || '',
+        email: String(row.email).trim(),
+        token: token,
+      });
+      const rowIndex = i + 2;
+      sheet.getRange(rowIndex, 1).setValue(id);
+      sheet.getRange(rowIndex, 2).setValue(token);
+      sheet.getRange(rowIndex, 5).setValue(new Date());
+      sent++;
+    } catch (err) {
+      const rowIndex = i + 2;
+      sheet.getRange(rowIndex, 9).setValue('send failed: ' + err.message);
+      skipped++;
+    }
+  }
+  return { sent: sent, skipped: skipped };
+}
+
+/** Toggle approval / publish state for a birthday wish. */
+function adminSetNoteApproved(noteId, approved) {
+  requireAdmin_();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(NOTES_SHEET);
+  if (!sheet) throw new Error('Notes tab missing.');
+  const last = sheet.getLastRow();
+  if (last < 2) return { ok: false };
+  const rows = sheet.getRange(2, 1, last - 1, NOTE_HEADERS.length).getValues();
+  const colIsApproved = NOTE_HEADERS.indexOf('is_approved') + 1;
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(noteId)) {
+      sheet.getRange(i + 2, colIsApproved).setValue(!!approved);
+      return { ok: true };
+    }
+  }
+  return { ok: false };
 }
 
 function handle_(fn) {

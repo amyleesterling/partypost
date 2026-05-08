@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PartyPost Admin</title>
+  <style>
+    :root {
+      --accent: #2F80ED;
+      --accent-dark: #1f5fc0;
+      --ink: #0B3A57;
+      --muted: #5A7187;
+      --bg: #f5f8fb;
+      --card: #ffffff;
+      --border: #e0e7ee;
+      --ok: #2c8a48;
+      --warn: #b8730b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      margin: 0;
+      padding: 24px 16px 80px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; }
+    header { margin-bottom: 24px; }
+    header h1 {
+      margin: 0 0 4px;
+      font-size: 28px;
+      letter-spacing: -0.01em;
+    }
+    header p { margin: 0; color: var(--muted); font-size: 14px; }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 1px 2px rgba(20,30,60,0.04), 0 6px 18px rgba(20,30,60,0.06);
+      padding: 18px 20px;
+      margin-bottom: 18px;
+    }
+    .card h2 {
+      margin: 0 0 6px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.005em;
+    }
+    .card .muted {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 14px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 10px;
+    }
+    .stat {
+      background: #f4f8fb;
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+    .stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+    .stat .value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+    td .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .pill-pending { background: #f4f0e2; color: var(--warn); }
+    .pill-sent    { background: #e7eef9; color: var(--accent); }
+    .pill-opened  { background: #dde9f8; color: #2469d6; }
+    .pill-clicked { background: #d0e1f5; color: #1956b8; }
+    .pill-rsvp    { background: #d6efe0; color: var(--ok); }
+    .pill-yes     { background: #d6efe0; color: var(--ok); }
+    .pill-no      { background: #efdedb; color: #a3373a; }
+
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+    }
+    textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    button {
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      font-weight: 600;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 9999px;
+      font-size: 14px;
+      box-shadow: 0 6px 16px -6px rgba(47,128,237,0.6);
+    }
+    .btn-primary:hover { background: var(--accent-dark); }
+    .btn-primary:disabled { opacity: 0.55; cursor: default; }
+    .btn-link {
+      background: none;
+      color: var(--accent);
+      font-size: 13px;
+      padding: 4px 0;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 9999px;
+      font-size: 14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; }
+
+    .row-actions { display: flex; gap: 6px; }
+    .small { font-size: 12px; color: var(--muted); }
+    .empty { color: var(--muted); font-style: italic; padding: 16px; text-align: center; }
+    .loading { color: var(--muted); padding: 24px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>🎉 PartyPost admin</h1>
+      <p id="party-summary" class="muted">Loading…</p>
+    </header>
+
+    <section id="dashboard" class="card" hidden>
+      <h2>Overview</h2>
+      <div class="summary" id="stats"></div>
+    </section>
+
+    <section class="card">
+      <h2>Send invitations</h2>
+      <p class="muted">
+        Paste names + emails below — one per line. Examples:<br>
+        <code>Jane Smith jane@example.com</code> &nbsp;or&nbsp; <code>jane@example.com</code>
+      </p>
+      <textarea id="invitee-input" rows="5" placeholder="Jane Smith jane@example.com&#10;john@example.com"></textarea>
+      <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn-primary" id="btn-add" onclick="addInvitees()">Add to list</button>
+        <button class="btn-primary" id="btn-send" onclick="sendPending()" style="background:#2c8a48;box-shadow:0 6px 16px -6px rgba(44,138,72,0.6);">📨 Send to pending</button>
+      </div>
+    </section>
+
+    <section class="card" id="invitations-card">
+      <h2>Invitees</h2>
+      <p class="muted" id="invitations-empty" hidden>No invitations yet. Paste some above and click "Add to list".</p>
+      <div id="invitations-table-wrap"></div>
+    </section>
+
+    <section class="card" id="rsvps-card">
+      <h2>RSVPs</h2>
+      <div id="rsvps-table-wrap"></div>
+    </section>
+
+    <section class="card" id="notes-card">
+      <h2>Birthday wishes</h2>
+      <p class="muted">New wishes show as "Pending" until you approve them. Only approved wishes appear on the public party page.</p>
+      <div id="notes-table-wrap"></div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    function $(id) { return document.getElementById(id); }
+    function fmtDate(s) {
+      if (!s) return '';
+      try {
+        var d = new Date(s);
+        if (isNaN(d.getTime())) return s;
+        var pad = function (n) { return n < 10 ? '0' + n : n; };
+        return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+      } catch (_e) { return s; }
+    }
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+    var toastTimer = null;
+    function toast(msg) {
+      var el = $('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2400);
+    }
+    function setBusy(busy) {
+      ['btn-add','btn-send'].forEach(function (id) {
+        var b = $(id); if (b) b.disabled = busy;
+      });
+    }
+
+    function load() {
+      $('party-summary').textContent = 'Loading…';
+      google.script.run
+        .withSuccessHandler(render)
+        .withFailureHandler(function (err) {
+          $('party-summary').textContent = 'Error: ' + (err && err.message);
+        })
+        .adminGetDashboard();
+    }
+
+    function render(d) {
+      // Header
+      var subtitle = [d.party.title, d.party.date].filter(Boolean).join(' · ');
+      $('party-summary').textContent = subtitle || 'Party';
+
+      // Stats
+      $('dashboard').hidden = false;
+      $('stats').innerHTML = [
+        statCard('Yes', d.rsvps.yes),
+        statCard('No', d.rsvps.no),
+        statCard('Kids going', d.rsvps.kids),
+        statCard('Adults going', d.rsvps.adults),
+        statCard('Total going', d.rsvps.kids + d.rsvps.adults),
+        statCard('Invitations', d.invitations.length),
+      ].join('');
+
+      // Invitations
+      if (!d.invitations.length) {
+        $('invitations-empty').hidden = false;
+        $('invitations-table-wrap').innerHTML = '';
+      } else {
+        $('invitations-empty').hidden = true;
+        $('invitations-table-wrap').innerHTML = invitationsTable(d.invitations);
+      }
+
+      // RSVPs
+      $('rsvps-table-wrap').innerHTML = d.rsvps.details.length
+        ? rsvpsTable(d.rsvps.details)
+        : '<p class="empty">No RSVPs yet. Share the party link!</p>';
+
+      // Notes
+      $('notes-table-wrap').innerHTML = d.notes.length
+        ? notesTable(d.notes)
+        : '<p class="empty">No birthday wishes yet.</p>';
+    }
+
+    function statCard(label, value) {
+      return '<div class="stat"><div class="label">' + escapeHtml(label) + '</div><div class="value">' + escapeHtml(value) + '</div></div>';
+    }
+
+    function invitationsTable(rows) {
+      var head = '<tr><th>Status</th><th>Name</th><th>Email</th><th>Sent</th><th>Opened</th><th>Clicked</th><th>RSVP</th></tr>';
+      var body = rows.map(function (r) {
+        var status, cls;
+        if (r.rsvp_id) { status = 'RSVPd'; cls = 'pill-rsvp'; }
+        else if (r.clicked_at) { status = 'Clicked'; cls = 'pill-clicked'; }
+        else if (r.opened_at)  { status = 'Opened';  cls = 'pill-opened'; }
+        else if (r.sent_at)    { status = 'Sent';    cls = 'pill-sent'; }
+        else { status = 'Pending'; cls = 'pill-pending'; }
+        return '<tr>'
+          + '<td><span class="pill ' + cls + '">' + status + '</span></td>'
+          + '<td>' + escapeHtml(r.name) + '</td>'
+          + '<td><span class="small">' + escapeHtml(r.email) + '</span></td>'
+          + '<td><span class="small">' + escapeHtml(fmtDate(r.sent_at)) + '</span></td>'
+          + '<td><span class="small">' + escapeHtml(fmtDate(r.opened_at)) + '</span></td>'
+          + '<td><span class="small">' + escapeHtml(fmtDate(r.clicked_at)) + '</span></td>'
+          + '<td>' + (r.rsvp_id ? '<span class="pill pill-yes">✓</span>' : '') + '</td>'
+          + '</tr>';
+      }).join('');
+      return '<table><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+    }
+
+    function rsvpsTable(rows) {
+      var head = '<tr><th>Status</th><th>Parent(s)</th><th>Email</th><th>Adults</th><th>Kids</th><th>Allergies</th><th>Note</th><th>Submitted</th></tr>';
+      var body = rows.map(function (r) {
+        var cls = r.status === 'yes' ? 'pill-yes' : 'pill-no';
+        return '<tr>'
+          + '<td><span class="pill ' + cls + '">' + escapeHtml(r.status) + '</span></td>'
+          + '<td>' + escapeHtml(r.parent_names) + '</td>'
+          + '<td><span class="small">' + escapeHtml(r.email) + '</span></td>'
+          + '<td>' + r.adults_count + '</td>'
+          + '<td>' + r.kids_count + '</td>'
+          + '<td><span class="small">' + escapeHtml(r.allergy_notes) + '</span></td>'
+          + '<td><span class="small">' + escapeHtml(r.private_note) + '</span></td>'
+          + '<td><span class="small">' + escapeHtml(fmtDate(r.created_at)) + '</span></td>'
+          + '</tr>';
+      }).join('');
+      return '<table><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+    }
+
+    function notesTable(rows) {
+      var head = '<tr><th>Status</th><th>From</th><th>Wish</th><th></th></tr>';
+      var body = rows.map(function (n) {
+        var statusPill = n.is_approved
+          ? '<span class="pill pill-yes">Approved</span>'
+          : '<span class="pill pill-pending">Pending</span>';
+        var btn = n.is_approved
+          ? '<button class="btn-link" onclick="setApproved(\'' + n.id + '\', false)">hide</button>'
+          : '<button class="btn-link" onclick="setApproved(\'' + n.id + '\', true)">approve</button>';
+        return '<tr>'
+          + '<td>' + statusPill + '</td>'
+          + '<td>' + escapeHtml(n.display_name) + '</td>'
+          + '<td>' + escapeHtml(n.message) + '</td>'
+          + '<td>' + btn + '</td>'
+          + '</tr>';
+      }).join('');
+      return '<table><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+    }
+
+    function parseLine(line) {
+      var t = line.trim();
+      if (!t) return null;
+      var m = t.match(/^(.+?)\s+([^\s@]+@[^\s@]+\.[^\s@]+)\s*$/);
+      if (m) return { name: m[1].trim(), email: m[2].trim() };
+      var em = t.match(/^([^\s@]+@[^\s@]+\.[^\s@]+)\s*$/);
+      if (em) return { name: '', email: em[1].trim() };
+      return null;
+    }
+
+    function addInvitees() {
+      var raw = $('invitee-input').value.split(/\r?\n/);
+      var entries = raw.map(parseLine).filter(Boolean);
+      if (!entries.length) { toast('Add at least one name + email per line.'); return; }
+      setBusy(true);
+      google.script.run
+        .withSuccessHandler(function (res) {
+          setBusy(false);
+          $('invitee-input').value = '';
+          toast('Added ' + (res && res.added || 0));
+          load();
+        })
+        .withFailureHandler(function (err) { setBusy(false); toast('Error: ' + (err && err.message)); })
+        .adminAddInvitees(entries);
+    }
+
+    function sendPending() {
+      if (!confirm('Send invitation emails to everyone who hasn’t been sent yet?')) return;
+      setBusy(true);
+      google.script.run
+        .withSuccessHandler(function (res) {
+          setBusy(false);
+          toast('Sent ' + (res && res.sent || 0) + ', skipped ' + (res && res.skipped || 0));
+          load();
+        })
+        .withFailureHandler(function (err) { setBusy(false); toast('Error: ' + (err && err.message)); })
+        .adminSendPending();
+    }
+
+    function setApproved(noteId, approved) {
+      google.script.run
+        .withSuccessHandler(function () { toast(approved ? 'Approved' : 'Hidden'); load(); })
+        .withFailureHandler(function (err) { toast('Error: ' + (err && err.message)); })
+        .adminSetNoteApproved(noteId, approved);
+    }
+
+    load();
+  </script>
+</body>
+</html>
