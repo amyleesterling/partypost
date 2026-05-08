@@ -143,6 +143,55 @@
     .small { font-size: 12px; color: var(--muted); }
     .empty { color: var(--muted); font-style: italic; padding: 16px; text-align: center; }
     .loading { color: var(--muted); padding: 24px; text-align: center; }
+
+    /* Handy links — surfaced at the top so the admin doesn't have to
+       hunt for the auto-generated script.google.com URL. */
+    .links-list { display: flex; flex-direction: column; gap: 10px; }
+    .link-row {
+      display: grid;
+      grid-template-columns: 86px 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      background: #f4f8fb;
+      border-radius: 12px;
+      padding: 8px 12px;
+    }
+    .link-row .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .link-row a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      line-height: 1.35;
+    }
+    .link-row a:hover { text-decoration: underline; }
+    .link-row .icon-btn {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 12px;
+      color: var(--ink);
+      transition: background 0.15s ease;
+    }
+    .link-row .icon-btn:hover { background: #eef3f8; }
+    @media (max-width: 560px) {
+      .link-row {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas: 'label label' 'url url' 'copy open';
+      }
+      .link-row .label { grid-area: label; }
+      .link-row a { grid-area: url; }
+      .link-row .copy-btn { grid-area: copy; }
+      .link-row .open-btn { grid-area: open; }
+    }
   </style>
 </head>
 <body>
@@ -151,6 +200,12 @@
       <h1>🎉 PartyPost admin</h1>
       <p id="party-summary" class="muted">Loading…</p>
     </header>
+
+    <section id="links-card" class="card" hidden>
+      <h2>Handy links</h2>
+      <p class="muted">Bookmark these — the admin URL is auto-generated and easy to lose.</p>
+      <div class="links-list" id="links-list"></div>
+    </section>
 
     <section id="dashboard" class="card" hidden>
       <h2>Overview</h2>
@@ -270,6 +325,9 @@
       var subtitle = [d.party.title, d.party.date].filter(Boolean).join(' · ');
       $('party-summary').textContent = subtitle || 'Party';
 
+      // Handy links (party invite URL + this admin URL)
+      renderLinks(d.links || {});
+
       // Stats
       $('dashboard').hidden = false;
       $('stats').innerHTML = [
@@ -303,6 +361,53 @@
 
     function statCard(label, value) {
       return '<div class="stat"><div class="label">' + escapeHtml(label) + '</div><div class="value">' + escapeHtml(value) + '</div></div>';
+    }
+
+    function renderLinks(links) {
+      var rows = [];
+      if (links.partyUrl) {
+        rows.push(linkRow('Party invite', links.partyUrl));
+      }
+      if (links.adminUrl) {
+        rows.push(linkRow('Admin page', links.adminUrl));
+      }
+      if (!rows.length) {
+        $('links-card').hidden = true;
+        return;
+      }
+      $('links-card').hidden = false;
+      $('links-list').innerHTML = rows.join('');
+    }
+
+    function linkRow(label, url) {
+      var safeUrl = escapeHtml(url);
+      var safeUrlAttr = escapeHtml(url).replace(/'/g, "&#39;");
+      return ''
+        + '<div class="link-row">'
+        +   '<span class="label">' + escapeHtml(label) + '</span>'
+        +   '<a href="' + safeUrl + '" target="_blank" rel="noopener">' + safeUrl + '</a>'
+        +   '<button class="icon-btn copy-btn" type="button" onclick="copyToClipboard(\'' + safeUrlAttr + '\')">Copy</button>'
+        +   '<button class="icon-btn open-btn" type="button" onclick="window.open(\'' + safeUrlAttr + '\', \'_blank\')">Open</button>'
+        + '</div>';
+    }
+
+    function copyToClipboard(text) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () { toast('Link copied'); });
+          return;
+        }
+      } catch (_e) { /* fall through */ }
+      // Fallback for older browsers / sandboxed iframes
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); toast('Link copied'); }
+      catch (_e) { toast('Copy failed — select & copy manually.'); }
+      document.body.removeChild(ta);
     }
 
     function invitationsTable(rows) {

@@ -1,5 +1,6 @@
 "use client";
 
+import confetti from "canvas-confetti";
 import { useEffect, useRef, useState } from "react";
 
 type Phase = "closed" | "opening" | "settled" | "exiting" | "done";
@@ -51,6 +52,7 @@ export function EnvelopeIntro({
     } catch {
       /* ignore */
     }
+    fireOpenConfetti();
     // Card animation runs 0.4s delay + 2.0s emerge → ~2.4s total.
     settleTimer.current = setTimeout(() => setPhase("settled"), 2400);
   }
@@ -155,4 +157,38 @@ function formatDateForCard(d: string | null | undefined): string {
     "July", "August", "September", "October", "November", "December",
   ];
   return `${months[m - 1]} ${day}, ${y}`;
+}
+
+/** Two-burst confetti when the user taps to open the envelope. Picks up
+ *  the live theme accent + secondary so the celebration matches the
+ *  party's vibe (beach blues, princess pinks, etc.). */
+function fireOpenConfetti() {
+  if (typeof window === "undefined") return;
+  const styles = getComputedStyle(document.documentElement);
+  const accent = styles.getPropertyValue("--accent").trim() || "#E94F8A";
+  const secondary = styles.getPropertyValue("--secondary").trim() || "#FFD166";
+  const colors = [accent, secondary, "#ffffff", "#ffe5b4"];
+  // Center burst — feels like the seal popping open.
+  confetti({
+    particleCount: 90,
+    spread: 95,
+    startVelocity: 42,
+    ticks: 220,
+    origin: { x: 0.5, y: 0.45 },
+    colors,
+    scalar: 1,
+  });
+  // Slight follow-up burst from the bottom for a fountain effect.
+  setTimeout(() => {
+    confetti({
+      particleCount: 50,
+      angle: 90,
+      spread: 70,
+      startVelocity: 55,
+      ticks: 220,
+      origin: { x: 0.5, y: 0.85 },
+      colors,
+      scalar: 0.85,
+    });
+  }, 180);
 }

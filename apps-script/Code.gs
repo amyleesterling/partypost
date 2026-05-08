@@ -380,12 +380,25 @@ function adminGetDashboard() {
         })
     : [];
 
+  // "Handy links" shown at the top of the admin page — the public party
+  // invite URL and a link back to this admin deployment. The admin URL
+  // is the auto-generated script.google.com one that's painful to type
+  // from memory, so surface it here for easy copy/bookmark.
+  const siteUrl = _readSiteUrl_();
+  const slug = String(settings.slug || '').trim();
+  const partyUrl = slug ? (siteUrl + '/party/' + slug) : '';
+  const adminUrl = ScriptApp.getService().getUrl() || '';
+
   return {
     party: {
       title:    settings.party_title || '',
       child:    settings.birthday_child_name || '',
       date:     settings.date || '',
-      slug:     settings.slug || '',
+      slug:     slug,
+    },
+    links: {
+      partyUrl: partyUrl,
+      adminUrl: adminUrl,
     },
     rsvps: {
       total:   rsvps.length,

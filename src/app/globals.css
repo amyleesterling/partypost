@@ -440,9 +440,13 @@ body {
   animation: pp-env-card-emerge 2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
 }
 
-/* Once the card has emerged, fade the envelope shells (back panel,
-   flaps) so only the card sits on the page background — no colored
-   triangles bleeding around the card edges. */
+/* Fade the envelope shells (back panel, flaps) out DURING opening, on
+   the same beat as the card moving in front of them (~1.4s into the
+   2.4s opening sequence). This keeps the rotated pink top flap from
+   showing in front of the card after it has emerged — z-index in a
+   `transform-style: preserve-3d` context is unreliable when one
+   sibling has a 3D rotation, so the safest fix is to make the flap
+   fully transparent before the card needs to be in front of it. */
 .pp-env-opening .pp-env-back,
 .pp-env-opening .pp-env-side-flap,
 .pp-env-opening .pp-env-bottom-flap,
@@ -455,17 +459,8 @@ body {
 .pp-env-exiting .pp-env-side-flap,
 .pp-env-exiting .pp-env-bottom-flap,
 .pp-env-exiting .pp-env-flap {
-  transition: opacity 0.6s ease 1.4s;
-}
-.pp-env-settled .pp-env-back,
-.pp-env-settled .pp-env-side-flap,
-.pp-env-settled .pp-env-bottom-flap,
-.pp-env-settled .pp-env-flap,
-.pp-env-exiting .pp-env-back,
-.pp-env-exiting .pp-env-side-flap,
-.pp-env-exiting .pp-env-bottom-flap,
-.pp-env-exiting .pp-env-flap {
   opacity: 0;
+  transition: opacity 0.45s ease 1.0s;
 }
 .pp-env-settled .pp-env-card {
   /* Hold the final keyframe state — bigger than emergence and lifted
