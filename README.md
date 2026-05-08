@@ -69,7 +69,7 @@ Save the generated image, then tell your AI to use it as the party banner.
 
 ## Where the data lives
 
-Your Google Sheet's **RSVPs** tab. Sort, filter, export to CSV — all native. Edit the **Settings** tab to change anything on the public page (changes show up within a minute).
+Make a new Google Sheet called [kids Birthday Party]. All your informtation lives in different tabs, principally **RSVPs**. Edit the **Settings** tab to change anything on the public page (changes show up within a minute). 
 
 ## Make it yours
 
