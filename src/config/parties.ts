@@ -14,6 +14,10 @@ export interface PartyEntry {
   slug: string;
   /** URL of the Apps Script Web App that backs this party. */
   scriptUrl?: string;
+  /** Optional URL of the second "Only myself" Apps Script Web App that
+   *  serves the admin dashboard for this party. /admin/<slug> redirects
+   *  to this URL — Google's auth then gates it. */
+  adminUrl?: string;
   /** Static demo data. When set, RSVPs and notes are not persisted. */
   fixture?: PartyFixture;
   /** Hide from any public listing (landing page, future indexes). */
