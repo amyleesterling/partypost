@@ -146,9 +146,23 @@ function doPost(e) {
 // ----- Admin auth: Google sign-in via deployment access settings -----
 // The admin Web App is deployed with "Only myself" access, so Google won't
 // route a request here unless the caller is signed in as the script owner.
-// Inside the script, getActiveUser() === getEffectiveUser() proves it.
+//
+// We detect "this request is hitting the admin deployment" two ways:
+//   1) Script property ADMIN_URL matches the URL of the current deployment.
+//      Set this once after deploying the admin Web App.
+//   2) Session.getActiveUser() === getEffectiveUser(). This works on
+//      Workspace accounts but is empty for many consumer (gmail) accounts
+//      unless the userinfo.email scope is explicitly granted, so it's a
+//      fallback only.
 
 function isAdmin_() {
+  // Primary: deployment-URL property match.
+  try {
+    const myUrl = ScriptApp.getService().getUrl();
+    const adminUrl = PropertiesService.getScriptProperties().getProperty('ADMIN_URL');
+    if (adminUrl && myUrl && stripExec_(myUrl) === stripExec_(adminUrl)) return true;
+  } catch (_e) { /* fall through */ }
+  // Fallback: Session identity (Workspace-only).
   try {
     const active = Session.getActiveUser().getEmail();
     const effective = Session.getEffectiveUser().getEmail();
@@ -156,6 +170,24 @@ function isAdmin_() {
   } catch (_e) {
     return false;
   }
+}
+
+function stripExec_(url) {
+  return String(url || '').replace(/\?.*$/, '').replace(/#.*$/, '').trim();
+}
+
+/** Helper: run this from the Apps Script editor to print the current
+ *  deployment URL and identity info to the execution log. Useful to set
+ *  the ADMIN_URL script property correctly. */
+function whoAmI() {
+  const url = ScriptApp.getService().getUrl();
+  let active = '', effective = '';
+  try { active = Session.getActiveUser().getEmail(); } catch (_e) {}
+  try { effective = Session.getEffectiveUser().getEmail(); } catch (_e) {}
+  Logger.log('Deployment URL: ' + url);
+  Logger.log('Session.getActiveUser: ' + active);
+  Logger.log('Session.getEffectiveUser: ' + effective);
+  return { url: url, active: active, effective: effective };
 }
 
 function requireAdmin_() {
