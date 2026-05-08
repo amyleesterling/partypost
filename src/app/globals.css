@@ -525,12 +525,9 @@ body {
    that occupies the middle of the screen. */
 .pp-env-rsvp-btn {
   position: fixed;
-  /* Anchored just below the settled card. The card center sits at
-     50vh - 8vh = 42vh, and the card is ~280px tall on each side after
-     scale 1.4 (60% × 480 / 0.72 = 400 declared, × 1.4 = 560, half =
-     280). Card bottom = 42vh + 280px. Button top sits 24px below
-     that. */
-  top: calc(42vh + 304px);
+  /* Pinned a hair above the bottom of the viewport so it's visible on
+     every screen size, regardless of how tall the settled card grows. */
+  bottom: max(28px, calc(env(safe-area-inset-bottom) + 5vh));
   left: 50%;
   transform: translateX(-50%);
   z-index: 110;
