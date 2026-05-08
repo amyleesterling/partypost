@@ -433,14 +433,15 @@ body {
   transform: rotateX(-180deg);
 }
 .pp-env-opening .pp-env-card {
-  animation: pp-env-card-emerge 1.45s cubic-bezier(.45, 1.4, .45, 1) 0.4s forwards;
+  animation: pp-env-card-emerge 2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
 }
 .pp-env-settled .pp-env-card {
-  /* Hold the final keyframe state */
+  /* Hold the final keyframe state — large + lifted up so the fixed RSVP
+     button at the bottom of the viewport has clear breathing room. */
   opacity: 1;
-  transform: translate(-50%, -50%) rotate(0) scale(1.2);
+  transform: translate(-50%, calc(-50% - 4vh)) rotate(0) scale(1.55);
   box-shadow:
-    0 24px 48px -12px rgba(20, 30, 60, 0.4),
+    0 28px 56px -14px rgba(20, 30, 60, 0.42),
     0 1px 0 rgba(0,0,0,0.04);
 }
 .pp-env-opening .pp-env-hint,
@@ -450,32 +451,31 @@ body {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* Card animation — emerges sideways out of the envelope, rotates upright,
-   zooms forward. Final position is centered at 1.2× scale. Translates use
-   modest values so the card stays inside the viewport on phones. */
+/* Card animation — emerges sideways out of the envelope (rotated 90°),
+   rotates upright + zooms forward, settles at 1.55× scale lifted slightly
+   above viewport center so the fixed-bottom RSVP button has room. Each
+   keyframe uses ease-in-out timing so the segment-to-segment motion is
+   continuous (no jerky direction changes). */
 @keyframes pp-env-card-emerge {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) rotate(90deg) scale(0.55);
+    transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
   }
-  18% {
+  10% {
     opacity: 1;
-    transform: translate(-50%, -55%) rotate(90deg) scale(0.6);
+    transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
   }
-  44% {
-    /* slid sideways up out of the envelope opening */
-    opacity: 1;
-    transform: translate(-50%, -95%) rotate(90deg) scale(0.78);
+  38% {
+    /* slid up sideways to final vertical position, still rotated 90° */
+    transform: translate(-50%, calc(-50% - 4vh)) rotate(90deg) scale(0.62);
   }
-  72% {
-    /* rotated upright, midway to settled */
-    opacity: 1;
-    transform: translate(-50%, -68%) rotate(0deg) scale(1.0);
+  70% {
+    /* rotation unwinds in place to upright, mid-zoom */
+    transform: translate(-50%, calc(-50% - 4vh)) rotate(0deg) scale(1.15);
   }
   100% {
-    /* settled at envelope center, modest scale-up */
-    opacity: 1;
-    transform: translate(-50%, -50%) rotate(0deg) scale(1.2);
+    /* settled — large + lifted */
+    transform: translate(-50%, calc(-50% - 4vh)) rotate(0deg) scale(1.55);
   }
 }
 
@@ -531,7 +531,7 @@ body {
 .pp-env-exiting .pp-env-card {
   /* keep settled transform during fade */
   opacity: 1;
-  transform: translate(-50%, -50%) rotate(0) scale(1.2);
+  transform: translate(-50%, calc(-50% - 4vh)) rotate(0) scale(1.55);
 }
 .pp-env-exiting .pp-env-flap { transform: rotateX(-180deg); }
 

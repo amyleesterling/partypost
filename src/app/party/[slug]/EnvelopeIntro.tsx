@@ -51,8 +51,8 @@ export function EnvelopeIntro({
     } catch {
       /* ignore */
     }
-    // Card animation lasts ~1.8s (0.5s delay + 1.3s emerge + rotate + zoom).
-    settleTimer.current = setTimeout(() => setPhase("settled"), 1900);
+    // Card animation runs 0.4s delay + 2.0s emerge → ~2.4s total.
+    settleTimer.current = setTimeout(() => setPhase("settled"), 2400);
   }
 
   function dismiss() {
