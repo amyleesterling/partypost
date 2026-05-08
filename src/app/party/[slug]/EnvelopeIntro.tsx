@@ -89,7 +89,13 @@ export function EnvelopeIntro({
           <div className="pp-env-side-flap pp-env-side-flap-left" />
           <div className="pp-env-side-flap pp-env-side-flap-right" />
           <div className="pp-env-bottom-flap" />
-          <div className="pp-env-card">
+          <div
+            className="pp-env-card"
+            onClick={phase === "settled" ? dismiss : undefined}
+            style={phase === "settled" ? { cursor: "pointer" } : undefined}
+            role={phase === "settled" ? "button" : undefined}
+            aria-label={phase === "settled" ? "Open invitation" : undefined}
+          >
             {inviteImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

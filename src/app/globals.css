@@ -435,11 +435,39 @@ body {
 .pp-env-opening .pp-env-card {
   animation: pp-env-card-emerge 2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
 }
+
+/* Once the card has emerged, fade the envelope shells (back panel,
+   flaps) so only the card sits on the page background — no colored
+   triangles bleeding around the card edges. */
+.pp-env-opening .pp-env-back,
+.pp-env-opening .pp-env-side-flap,
+.pp-env-opening .pp-env-bottom-flap,
+.pp-env-opening .pp-env-flap,
+.pp-env-settled .pp-env-back,
+.pp-env-settled .pp-env-side-flap,
+.pp-env-settled .pp-env-bottom-flap,
+.pp-env-settled .pp-env-flap,
+.pp-env-exiting .pp-env-back,
+.pp-env-exiting .pp-env-side-flap,
+.pp-env-exiting .pp-env-bottom-flap,
+.pp-env-exiting .pp-env-flap {
+  transition: opacity 0.6s ease 1.4s;
+}
+.pp-env-settled .pp-env-back,
+.pp-env-settled .pp-env-side-flap,
+.pp-env-settled .pp-env-bottom-flap,
+.pp-env-settled .pp-env-flap,
+.pp-env-exiting .pp-env-back,
+.pp-env-exiting .pp-env-side-flap,
+.pp-env-exiting .pp-env-bottom-flap,
+.pp-env-exiting .pp-env-flap {
+  opacity: 0;
+}
 .pp-env-settled .pp-env-card {
-  /* Hold the final keyframe state — large + lifted up so the fixed RSVP
+  /* Hold the final keyframe state — large + lifted UP so the fixed RSVP
      button at the bottom of the viewport has clear breathing room. */
   opacity: 1;
-  transform: translate(-50%, calc(-50% - 4vh)) rotate(0) scale(1.55);
+  transform: translate(-50%, calc(-50% - 8vh)) rotate(0) scale(1.35);
   box-shadow:
     0 28px 56px -14px rgba(20, 30, 60, 0.42),
     0 1px 0 rgba(0,0,0,0.04);
@@ -461,21 +489,15 @@ body {
     opacity: 0;
     transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
   }
-  10% {
+  12% {
     opacity: 1;
     transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
   }
-  38% {
-    /* slid up sideways to final vertical position, still rotated 90° */
-    transform: translate(-50%, calc(-50% - 4vh)) rotate(90deg) scale(0.62);
-  }
-  70% {
-    /* rotation unwinds in place to upright, mid-zoom */
-    transform: translate(-50%, calc(-50% - 4vh)) rotate(0deg) scale(1.15);
-  }
   100% {
-    /* settled — large + lifted */
-    transform: translate(-50%, calc(-50% - 4vh)) rotate(0deg) scale(1.55);
+    /* one continuous, smoothly-eased transition from rotated/small to
+       upright/large/lifted. No intermediate keyframes = no rate-of-change
+       discontinuities. The cubic-bezier on the animation handles the easing. */
+    transform: translate(-50%, calc(-50% - 8vh)) rotate(0deg) scale(1.35);
   }
 }
 
@@ -531,7 +553,7 @@ body {
 .pp-env-exiting .pp-env-card {
   /* keep settled transform during fade */
   opacity: 1;
-  transform: translate(-50%, calc(-50% - 4vh)) rotate(0) scale(1.55);
+  transform: translate(-50%, calc(-50% - 8vh)) rotate(0) scale(1.35);
 }
 .pp-env-exiting .pp-env-flap { transform: rotateX(-180deg); }
 
