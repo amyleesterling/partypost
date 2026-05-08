@@ -75,11 +75,67 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('🎉 PartyPost')
     .addItem('1. Set up tabs', 'setupSheet')
-    .addItem('2. Show Web App URL', 'showWebAppUrl')
-    .addItem('3. Send pending invitations', 'sendPendingInvitations')
+    .addItem('2. Edit party details (form)', 'showSettingsForm')
+    .addItem('3. Show Web App URL', 'showWebAppUrl')
+    .addItem('4. Send pending invitations', 'sendPendingInvitations')
     .addSeparator()
     .addItem("What's left to fill in?", 'showSetupChecklist')
     .addToUi();
+}
+
+/** Open a friendly side-panel form for editing the Settings tab. Hosts
+ *  can fill in dates, times, theme, etc. without typing into cells or
+ *  remembering magic strings. */
+function showSettingsForm() {
+  const html = HtmlService.createHtmlOutputFromFile('settings-form')
+    .setTitle('PartyPost · Edit party details')
+    .setWidth(380);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+/** Read all Settings rows as a key->value object. Dates are returned
+ *  as YYYY-MM-DD and times as HH:MM so they slot directly into HTML
+ *  date/time inputs. */
+function getSettingsForForm() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  return readSettings_(ss);
+}
+
+/** Write a partial Settings update back into the Settings tab. `patch`
+ *  is { key: value, ... }. Existing keys are updated in place; new keys
+ *  are appended at the bottom. */
+function saveSettingsFromForm(patch) {
+  if (!patch || typeof patch !== 'object') throw new Error('Invalid patch');
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SETTINGS_SHEET);
+  if (!sheet) throw new Error('Settings tab missing. Run setupSheet().');
+
+  const last = sheet.getLastRow();
+  const rows = last >= 2
+    ? sheet.getRange(2, 1, last - 1, 2).getValues()
+    : [];
+  const keyToRow = {}; // key -> sheet row index (1-based)
+  rows.forEach(function (r, i) {
+    const k = String(r[0] || '').trim();
+    if (k) keyToRow[k] = i + 2;
+  });
+
+  let updated = 0;
+  let appended = 0;
+  Object.keys(patch).forEach(function (key) {
+    const val = patch[key];
+    if (val === undefined) return;
+    const cleanVal = (val === null) ? '' : String(val);
+    if (keyToRow[key]) {
+      sheet.getRange(keyToRow[key], 2).setValue(cleanVal);
+      updated++;
+    } else {
+      sheet.appendRow([key, cleanVal]);
+      appended++;
+    }
+  });
+
+  return { updated: updated, appended: appended };
 }
 
 function setupSheet() {

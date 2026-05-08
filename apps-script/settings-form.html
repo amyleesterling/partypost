@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+    :root {
+      --accent: #2F80ED;
+      --ink: #0B3A57;
+      --muted: #5A7187;
+      --bg: #f5f8fb;
+      --border: #d9e2eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      margin: 0;
+      padding: 14px 14px 96px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    h1 { font-size: 16px; margin: 0 0 4px; }
+    .sub { color: var(--muted); font-size: 12px; margin: 0 0 16px; }
+    .group {
+      background: white;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 0 rgba(20,30,60,0.04);
+    }
+    .group h2 {
+      margin: 0 0 8px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+    }
+    label > span {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    input[type="text"], input[type="email"], input[type="tel"], input[type="number"],
+    input[type="date"], input[type="time"], input[type="url"], select, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 7px 9px;
+      font-size: 13px;
+      font-family: inherit;
+      background: white;
+      color: var(--ink);
+    }
+    textarea { resize: vertical; min-height: 56px; }
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(245,248,251,0.95);
+      backdrop-filter: blur(6px);
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn {
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 13px;
+      padding: 9px 14px;
+      border-radius: 9999px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      flex: 1;
+    }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-primary:disabled { opacity: 0.55; cursor: default; }
+    .status {
+      flex: 1;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .loading {
+      color: var(--muted);
+      padding: 24px;
+      text-align: center;
+    }
+    .hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <h1>🎉 Edit party details</h1>
+  <p class="sub">Saved here flows to the public party page within ~1 minute.</p>
+
+  <div id="form-host">
+    <div class="loading">Loading…</div>
+  </div>
+
+  <div class="footer">
+    <span class="status" id="status"></span>
+    <button class="btn btn-primary" id="save-btn" type="button" onclick="save()">Save</button>
+  </div>
+
+  <script>
+    var current = {};
+
+    var FIELDS = [
+      { group: 'About the party', items: [
+        { key: 'party_title',         label: 'Party title',          type: 'text',     placeholder: "Sophia's 7th Birthday Party" },
+        { key: 'birthday_child_name', label: "Child's name",         type: 'text',     placeholder: 'Sophia' },
+        { key: 'birthday_age',        label: 'Age turning',          type: 'number',   placeholder: '7', cols: 1 },
+        { key: 'description',         label: 'Description',          type: 'textarea', placeholder: 'Come celebrate…' },
+        { key: 'slug',                label: 'Slug (URL path)',      type: 'text',     placeholder: 'sophia-7', hint: 'Letters, numbers, dashes only — used in /party/<slug>' },
+      ]},
+      { group: 'When', items: [
+        { key: 'date',                label: 'Date',                 type: 'date',     cols: 1 },
+        { key: 'rsvp_deadline',       label: 'RSVP by',              type: 'date',     cols: 1 },
+        { key: 'start_time',          label: 'Start time',           type: 'time',     cols: 1 },
+        { key: 'end_time',            label: 'End time',             type: 'time',     cols: 1 },
+      ]},
+      { group: 'Where', items: [
+        { key: 'location_name',       label: 'Location name',        type: 'text',     placeholder: 'Arlington Reservoir Beach' },
+        { key: 'location_address',    label: 'Address',              type: 'text',     placeholder: '422 Lowell St, Arlington, MA' },
+        { key: 'map_url',             label: 'Map URL (optional)',   type: 'url',      placeholder: 'https://maps.google.com/…' },
+        { key: 'rain_plan',           label: 'Rain plan (optional)', type: 'textarea' },
+      ]},
+      { group: 'Host', items: [
+        { key: 'host_name',           label: 'Host name',            type: 'text' },
+        { key: 'host_email',          label: 'Host email (for RSVP notifications)', type: 'email', hint: 'Comma-separate to send notifications to multiple hosts.' },
+        { key: 'host_phone',          label: 'Host phone (optional)', type: 'tel' },
+      ]},
+      { group: 'Vibe', items: [
+        { key: 'theme',               label: 'Theme',                type: 'select',
+          options: ['default','beach','princess','woodland','space','rainbow','science','garden-tea','arcade','dinosaur'] },
+        { key: 'banner_image_url',    label: 'Banner image URL (landscape, party page hero)', type: 'url' },
+        { key: 'invite_image_url',    label: 'Invite image URL (portrait, envelope card)',    type: 'url' },
+        { key: 'profile_image_url',   label: "Birthday child profile photo URL (optional)",   type: 'url' },
+      ]},
+      { group: 'Notes for guests', items: [
+        { key: 'gift_note',            label: 'Gift note',           type: 'text', placeholder: 'No gifts please' },
+        { key: 'food_note',            label: 'Food note',           type: 'text', placeholder: 'Pizza, fruit, and cupcakes' },
+      ]},
+    ];
+
+    function escapeAttr(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function render() {
+      var host = document.getElementById('form-host');
+      var html = '';
+      FIELDS.forEach(function (g) {
+        html += '<div class="group"><h2>' + g.group + '</h2>';
+        // detect 2-col rows: pair adjacent cols=1 fields
+        var i = 0;
+        while (i < g.items.length) {
+          var f = g.items[i];
+          var next = g.items[i + 1];
+          if (f.cols === 1 && next && next.cols === 1) {
+            html += '<div class="grid2">' + fieldHtml(f) + fieldHtml(next) + '</div>';
+            i += 2;
+          } else {
+            html += fieldHtml(f);
+            i += 1;
+          }
+        }
+        html += '</div>';
+      });
+      host.innerHTML = html;
+    }
+
+    function fieldHtml(f) {
+      var v = current[f.key] != null ? current[f.key] : '';
+      var attrs = 'name="' + f.key + '"';
+      if (f.placeholder) attrs += ' placeholder="' + escapeAttr(f.placeholder) + '"';
+      var control = '';
+      if (f.type === 'textarea') {
+        control = '<textarea ' + attrs + ' rows="2">' + escapeAttr(v) + '</textarea>';
+      } else if (f.type === 'select') {
+        var opts = f.options.map(function (opt) {
+          var sel = String(v) === opt ? ' selected' : '';
+          return '<option value="' + escapeAttr(opt) + '"' + sel + '>' + escapeAttr(opt) + '</option>';
+        }).join('');
+        control = '<select ' + attrs + '>' + opts + '</select>';
+      } else {
+        var t = f.type;
+        if (t === 'number') t = 'number';
+        control = '<input type="' + t + '" ' + attrs + ' value="' + escapeAttr(v) + '" />';
+      }
+      var hint = f.hint ? '<div class="hint">' + escapeAttr(f.hint) + '</div>' : '';
+      return '<label><span>' + escapeAttr(f.label) + '</span>' + control + hint + '</label>';
+    }
+
+    function save() {
+      var patch = {};
+      FIELDS.forEach(function (g) {
+        g.items.forEach(function (f) {
+          var el = document.querySelector('[name="' + f.key + '"]');
+          if (!el) return;
+          patch[f.key] = el.value;
+        });
+      });
+      var btn = document.getElementById('save-btn');
+      var status = document.getElementById('status');
+      btn.disabled = true;
+      status.textContent = 'Saving…';
+      google.script.run
+        .withSuccessHandler(function (res) {
+          btn.disabled = false;
+          status.textContent = 'Saved · ' + res.updated + ' updated, ' + res.appended + ' new';
+          setTimeout(function () { status.textContent = ''; }, 3500);
+        })
+        .withFailureHandler(function (err) {
+          btn.disabled = false;
+          status.textContent = 'Error: ' + (err && err.message);
+        })
+        .saveSettingsFromForm(patch);
+    }
+
+    function load() {
+      google.script.run
+        .withSuccessHandler(function (settings) {
+          current = settings || {};
+          render();
+        })
+        .withFailureHandler(function (err) {
+          document.getElementById('form-host').innerHTML =
+            '<div class="loading">Error loading settings: ' + (err && err.message) + '<br>Run "1. Set up tabs" first.</div>';
+        })
+        .getSettingsForForm();
+    }
+
+    load();
+  </script>
+</body>
+</html>
