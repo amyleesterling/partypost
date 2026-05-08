@@ -307,7 +307,9 @@ body {
   background: linear-gradient(180deg, #ffffff 0%, #fff8ed 100%);
   border-radius: 6px;
   overflow: hidden;
-  z-index: 10; /* always above the flaps so it lands on top once it emerges */
+  z-index: 1; /* starts BEHIND the flaps so it looks like it's inside
+                 the envelope; jumps above them mid-animation once the
+                 card has cleared the envelope opening */
   opacity: 0;
   box-shadow:
     0 2px 6px rgba(0,0,0,0.10),
@@ -464,10 +466,11 @@ body {
   opacity: 0;
 }
 .pp-env-settled .pp-env-card {
-  /* Hold the final keyframe state — lifted higher so the fixed RSVP
-     button at the bottom of the viewport has clear breathing room. */
+  /* Hold the final keyframe state — bigger than emergence and lifted
+     up so the RSVP button sits cleanly below it. */
   opacity: 1;
-  transform: translate(-50%, calc(-50% - 10vh)) rotate(0) scale(1.2);
+  transform: translate(-50%, calc(-50% - 8vh)) rotate(0) scale(1.4);
+  z-index: 100;
   box-shadow:
     0 28px 56px -14px rgba(20, 30, 60, 0.42),
     0 1px 0 rgba(0,0,0,0.04);
@@ -488,18 +491,30 @@ body {
   0% {
     opacity: 0;
     transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
+    z-index: 1;
   }
   10% {
     opacity: 1;
     transform: translate(-50%, -52%) rotate(90deg) scale(0.55);
+    z-index: 1;
   }
+  /* Up through 49% the card is still emerging from the envelope's
+     opening — keep it BEHIND the flaps so the bottom/side flaps cover
+     the part still inside, like a real card sliding out. */
+  49% {
+    transform: translate(-50%, calc(-50% - 8vh)) rotate(90deg) scale(0.85);
+    z-index: 1;
+  }
+  /* Once the card has cleared the envelope, jump to a high z-index so
+     it sits above all flaps for the rotate + zoom. */
   50% {
-    /* card has slid up (still rotated sideways) — emerged out of envelope */
-    transform: translate(-50%, calc(-50% - 10vh)) rotate(90deg) scale(0.85);
+    transform: translate(-50%, calc(-50% - 8vh)) rotate(90deg) scale(0.85);
+    z-index: 100;
   }
   100% {
     /* rotates upright + finishes zoom in place */
-    transform: translate(-50%, calc(-50% - 10vh)) rotate(0deg) scale(1.2);
+    transform: translate(-50%, calc(-50% - 8vh)) rotate(0deg) scale(1.4);
+    z-index: 100;
   }
 }
 
@@ -508,12 +523,15 @@ body {
    that occupies the middle of the screen. */
 .pp-env-rsvp-btn {
   position: fixed;
-  /* 10vh from the bottom keeps it well below the lifted card on every
-     viewport size, so it never overlaps the invitation art. */
-  bottom: max(40px, calc(env(safe-area-inset-bottom) + 4vh));
+  /* Anchored just below the settled card. The card center sits at
+     50vh - 8vh = 42vh, and the card is ~280px tall on each side after
+     scale 1.4 (60% × 480 / 0.72 = 400 declared, × 1.4 = 560, half =
+     280). Card bottom = 42vh + 280px. Button top sits 24px below
+     that. */
+  top: calc(42vh + 304px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 70;
+  z-index: 110;
   padding: 14px 36px;
   font-size: 17px;
   font-weight: 700;
@@ -557,7 +575,8 @@ body {
 .pp-env-exiting .pp-env-card {
   /* keep settled transform during fade */
   opacity: 1;
-  transform: translate(-50%, calc(-50% - 10vh)) rotate(0) scale(1.2);
+  transform: translate(-50%, calc(-50% - 8vh)) rotate(0) scale(1.4);
+  z-index: 100;
 }
 .pp-env-exiting .pp-env-flap { transform: rotateX(-180deg); }
 
