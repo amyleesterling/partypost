@@ -94,26 +94,26 @@ src/
 └── public/           # Static assets (hero images per party)
 ```
 
-## Banner + invite art — STOP and prompt the user
+## Banner + invite art — prompt the user, but DON'T halt
 
-The party page has two image slots: a **landscape banner** (hero on the public page) and a **portrait invite** (the card that floats out of the envelope). These need to look polished and on-theme — they are the most visible part of the party page.
+The party page has two image slots: a **landscape banner** (hero on the public page) and a **portrait invite** (the card that floats out of the envelope). These need to look polished and on-theme — they're the most visible part of the page.
 
-**Do not auto-generate SVG, ASCII, emoji-collage, or other placeholder art.** A hand-rolled SVG of balloons looks like a hand-rolled SVG of balloons, and the user will know. The whole point of the README's Step 2 is that any consumer image generator (ChatGPT/DALL·E, Gemini, Midjourney, etc.) produces beautiful kid-party art in seconds, and the user can iterate until they love it.
+**Do not auto-generate SVG, ASCII, emoji-collage, or other placeholder art.** A hand-rolled SVG of balloons looks like a hand-rolled SVG of balloons. The whole point of the README's Step 2 is that any consumer image generator (ChatGPT/DALL·E, Gemini, Midjourney, etc.) produces beautiful kid-party art in seconds, and the user can iterate until they love it.
 
-When you reach the point of needing banner/invite art:
+The right pattern is **prompt-and-continue**, not halt-and-wait:
 
-1. **Halt and prompt the user.** Show them the image-generation prompt from the README's "Step 2 — Generate a banner image" section, filled in with their party's specifics (child's name, age, date, location, theme, favorite colors).
-2. **Wait for them to come back with a file.** They'll generate it in their tool of choice and either save it to `public/<slug>-banner.png` (landscape) and `public/<slug>-invite.png` (portrait) themselves, or paste it into the chat for you to write to disk.
-3. **Then** wire it up: either commit the file to `public/` and reference `/<slug>-banner.png` in the Settings tab's `banner_image_url` (and `invite_image_url` for the portrait), or paste a hosted URL directly into Settings.
+1. When you reach the banner/invite step, **prompt the user inline**: paste the image-generation prompt from the README's "Step 2 — Generate a banner image" section, filled in with their party's specifics (child's name, age, date, location, theme, favorite colors). Tell them to drop the resulting image(s) into `public/<slug>-banner.png` and `public/<slug>-invite.png` whenever they're ready.
+2. **Don't block on it.** Keep going — finish the Sheet/Apps Script setup, register the party in `parties.ts`, push, deploy. The site can ship with empty image fields; it degrades gracefully (theme-color background, monogrammed envelope still works).
+3. When the user comes back with their image, wire it up: either commit the file to `public/` and reference `/<slug>-banner.png` in the Settings tab's `banner_image_url` / `invite_image_url`, or paste a hosted URL directly into Settings. The image takes effect on the next deploy (or within ~60s of editing the Sheet).
 
-If the user is in a hurry and wants to ship without final art, fall back to the Settings tab's existing image fields being empty — the page degrades gracefully (theme color background, monogrammed envelope) — rather than synthesizing fake art. They can add real art later.
+The goal: the user starts generating art in a separate tab while you're getting the rest of the party live. By the time the site deploys, they have art ready to paste in.
 
 ## Things to NOT do
 
 - Don't introduce server-side databases (Postgres, MongoDB, Firebase) — Sheets is the database
 - Don't add admin auth or sign-in flows — there is no admin UI; the Sheet is the admin
 - Don't add image upload UIs — hosts paste an image URL into the Settings tab (or commit a file under `public/` and use a relative URL)
-- Don't auto-generate banner/invite art (SVG, ASCII, emoji collage, etc.) — see the section above. Halt and prompt the user to generate real art with an image-gen tool.
+- Don't auto-generate banner/invite art (SVG, ASCII, emoji collage, etc.) — see the section above. Prompt the user to generate real art with an image-gen tool, then keep going (don't block on it; the site ships fine with empty image fields).
 - Don't add "host approval" gating to the note wall — auto-publish
 - Don't add Maybe RSVPs back
 - Don't generate slugs — hosts pick them in `parties.ts`
