@@ -498,33 +498,38 @@ body {
   animation: pp-env-card-emerge 2.5s cubic-bezier(0.22, 1, 0.36, 1) 1.0s forwards;
 }
 
-/* Envelope shells (back panel + all four flaps) stay fully visible
-   during the card's slide-up phase so the card actually looks like
-   it's sliding through the envelope's slot. They start dissolving at
-   t=1.6s (just before the card reaches its emerged sideways position
-   at t=2.0s) and finish by t=2.2s — clearing the stage for the
-   card's rotate + zoom into hero pose. */
+/* The PINK TOP FLAP fades early — out of the way before the card
+   rotates upright into its area. Starts at t=1.0s, gone by t=1.6s.
+   Separate from other shells so we can time it independently. */
+.pp-env-opening .pp-env-flap,
+.pp-env-settled .pp-env-flap,
+.pp-env-exiting .pp-env-flap {
+  opacity: 0;
+  transition: opacity 0.6s ease 1.0s;
+}
+
+/* Other shells (back panel, left/right side flaps, bottom flap) stay
+   fully visible during the card's slide-up phase, then dissolve
+   gracefully over a slow 1.5s — the envelope softly melts away around
+   the rising card rather than snapping out. */
 .pp-env-opening .pp-env-back,
 .pp-env-opening .pp-env-side-flap,
 .pp-env-opening .pp-env-bottom-flap,
-.pp-env-opening .pp-env-flap,
 .pp-env-settled .pp-env-back,
 .pp-env-settled .pp-env-side-flap,
 .pp-env-settled .pp-env-bottom-flap,
-.pp-env-settled .pp-env-flap,
 .pp-env-exiting .pp-env-back,
 .pp-env-exiting .pp-env-side-flap,
-.pp-env-exiting .pp-env-bottom-flap,
-.pp-env-exiting .pp-env-flap {
+.pp-env-exiting .pp-env-bottom-flap {
   opacity: 0;
-  transition: opacity 0.6s ease 1.6s;
+  transition: opacity 1.5s ease 2.0s;
 }
 .pp-env-settled .pp-env-card {
-  /* Hold the final keyframe state — scaled smaller than before (1.2×
-     instead of 1.4×) and lifted higher (12vh) so the RSVP button at
-     the bottom of the viewport ALWAYS has clearance below the card. */
+  /* Hold the final keyframe state — scaled to 1.1× and lifted 16vh up
+     from viewport center. RSVP button is positioned dynamically below
+     the card via JS (see EnvelopeIntro.tsx). */
   opacity: 1;
-  transform: translate(-50%, calc(-50% - 12vh)) scale(1.2);
+  transform: translate(-50%, calc(-50% - 16vh)) scale(1.1);
   z-index: 100;
   box-shadow:
     0 28px 56px -14px rgba(20, 30, 60, 0.42),
@@ -549,7 +554,7 @@ body {
         the .pp-env-opening rule. */
 @keyframes pp-env-card-emerge {
   /* t=0% (= t=1.0s after click): hidden inside envelope at center,
-     sideways, small. Behind flaps. */
+     sideways, small. Behind ALL flaps. */
   0% {
     opacity: 0;
     transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
@@ -561,26 +566,31 @@ body {
     transform: translate(-50%, -50%) rotate(90deg) scale(0.55);
     z-index: 1;
   }
-  /* t=40% (~2.0s): card has slid UP through the envelope's open slot,
-     still sideways. Last keyframe with z-index 1 (behind flaps). */
-  40% {
-    transform: translate(-50%, calc(-50% - 10vh)) rotate(90deg) scale(0.8);
+  /* t=23% (~1.575s): card has slid up partway through the slot. Last
+     frame at z-index 1 — pink flap is fading out around now (gone by
+     1.6s), so this is the moment to flip in front. */
+  23% {
+    transform: translate(-50%, calc(-50% - 4vh)) rotate(90deg) scale(0.65);
     z-index: 1;
   }
-  /* t=41% (~2.025s): instant z-index switch the moment the card has
-     fully cleared the envelope. Card now sits in front of any
-     remaining flap remnants. */
-  41% {
+  /* t=24% (~1.6s): instant z-index switch — card now in FRONT of all
+     shells. Pink flap is gone. Side/bottom/back are still visible
+     (they fade slowly until t=3.5s) but the card is on top of them. */
+  24% {
+    transform: translate(-50%, calc(-50% - 4vh)) rotate(90deg) scale(0.65);
+    z-index: 100;
+  }
+  /* t=40% (~2.0s): card has slid fully up, still sideways, lifted */
+  40% {
     transform: translate(-50%, calc(-50% - 10vh)) rotate(90deg) scale(0.8);
     z-index: 100;
   }
   /* t=100% (= t=3.5s after click): hero pose — rotated upright, lifted
-     12vh from viewport center, scaled to 1.2×. The full 1.475s
-     between 41% and 100% is dedicated to the flip + zoom, so the
-     motion has time to feel deliberate, not snapped. */
+     16vh from viewport center, scaled to 1.1×. The full 1.5s between
+     40% and 100% is dedicated to the flip + zoom. */
   100% {
     opacity: 1;
-    transform: translate(-50%, calc(-50% - 12vh)) rotate(0deg) scale(1.2);
+    transform: translate(-50%, calc(-50% - 16vh)) rotate(0deg) scale(1.1);
     z-index: 100;
   }
 }
@@ -641,7 +651,7 @@ body {
 .pp-env-exiting .pp-env-card {
   /* keep settled transform during fade */
   opacity: 1;
-  transform: translate(-50%, calc(-50% - 12vh)) scale(1.2);
+  transform: translate(-50%, calc(-50% - 16vh)) scale(1.1);
   z-index: 100;
 }
 .pp-env-exiting .pp-env-flap { transform: rotateX(-180deg); }

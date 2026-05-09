@@ -22,6 +22,12 @@ export function EnvelopeIntro({
 }) {
   const [phase, setPhase] = useState<Phase | null>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  // Dynamic button position — measured below the card's actual rendered
+  // bottom in JS so it can never overlap regardless of viewport,
+  // transform, or scale.
+  const [buttonStyle, setButtonStyle] = useState<React.CSSProperties>({});
 
   useEffect(() => {
     // ?envelope=1 forces the envelope to show even if seen already this
@@ -45,6 +51,38 @@ export function EnvelopeIntro({
       if (settleTimer.current) clearTimeout(settleTimer.current);
     };
   }, []);
+
+  // Position the RSVP button dynamically below the card's actual
+  // rendered bottom. CSS-based positioning depended on viewport
+  // height + transform math that broke down on edge-case viewports
+  // (short laptops, landscape phones). Measuring the real bounding
+  // box guarantees the button is always cleanly below the card.
+  useEffect(() => {
+    if (phase !== "settled") {
+      setButtonStyle({});
+      return;
+    }
+    function update() {
+      const card = cardRef.current;
+      const btn = buttonRef.current;
+      if (!card || !btn) return;
+      const cardRect = card.getBoundingClientRect();
+      const btnHeight = btn.offsetHeight || 50;
+      const desiredTop = cardRect.bottom + 28; // 28px gap below card
+      // Don't push the button off-screen on tiny viewports — clamp so
+      // it stays at least 16px from the bottom edge.
+      const maxTop = window.innerHeight - btnHeight - 16;
+      const top = Math.min(desiredTop, maxTop);
+      setButtonStyle({ top: `${top}px`, bottom: "auto" });
+    }
+    // Run on next frame so the card transform is committed first.
+    const raf = requestAnimationFrame(update);
+    window.addEventListener("resize", update);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", update);
+    };
+  }, [phase]);
 
   function open() {
     if (phase !== "closed") return;
@@ -106,6 +144,7 @@ export function EnvelopeIntro({
           <div className="pp-env-side-flap pp-env-side-flap-right" />
           <div className="pp-env-bottom-flap" />
           <div
+            ref={cardRef}
             className="pp-env-card"
             onClick={phase === "settled" ? dismiss : undefined}
             style={phase === "settled" ? { cursor: "pointer" } : undefined}
@@ -156,8 +195,10 @@ export function EnvelopeIntro({
 
         {phase === "settled" && (
           <button
+            ref={buttonRef}
             type="button"
             className="pp-env-rsvp-btn pp-env-rsvp-enter"
+            style={buttonStyle}
             onClick={dismiss}
           >
             RSVP →
