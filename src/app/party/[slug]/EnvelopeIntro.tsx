@@ -57,12 +57,17 @@ export function EnvelopeIntro({
     fireOpenConfetti();
     // Sequence:
     //   0.0s click → seal vanishes, confetti, pink flap starts unfolding
-    //   0.0s → 0.8s pink flap unfolds fully
-    //   0.8s → 1.0s anticipation pause (flap open, no card yet)
-    //   1.0s → ~1.2s card fades in at envelope center (peeking from inside)
-    //   1.2s → 3.0s card glides upward + grows to hero pose (eased)
-    //   3.0s settled → RSVP button slides in
-    settleTimer.current = setTimeout(() => setPhase("settled"), 3000);
+    //   0.0s → 0.8s pink flap unfolds fully (slow ease)
+    //   0.8s → 1.0s anticipation pause — flap open, no card yet
+    //   1.0s → ~1.2s card fades in INSIDE envelope, sideways (rotated 90°)
+    //   1.2s → 2.0s card slides UP through the envelope's slot, sideways,
+    //               BEHIND the flaps (z-index 1) — looks like a card
+    //               sliding edge-first out of a sleeve
+    //   2.0s         z-index switches to 100 — card now in front
+    //   1.6s → 2.2s envelope shells dissolve in the background
+    //   2.0s → 3.5s card rotates upright + zooms to hero pose, slow ease-out
+    //   3.5s settled → RSVP button slides in
+    settleTimer.current = setTimeout(() => setPhase("settled"), 3500);
   }
 
   function dismiss() {

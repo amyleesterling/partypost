@@ -295,12 +295,16 @@ body {
   border-radius: 0 10px 10px 0;
 }
 
-/* Card sits at the envelope's center while closed (opacity 0, hidden).
-   On open, a keyframe choreographs (after the flap has already opened):
-     - card fades in at envelope center, small
-     - card glides upward and grows to a hero pose
-   No rotation — the card stays upright the whole way, so it reads as
-   "card floating up out of the envelope," not "card flipping in space."
+/* Card lives inside the envelope while closed (opacity 0, hidden behind
+   the flaps). On open, a keyframe choreographs:
+     - card fades in INSIDE the envelope, sideways (rotated 90°), small,
+       BEHIND the flaps (z-index 1)
+     - card slides UP through the envelope's open top flap, still
+       sideways, like a real card emerging edge-first from a slot
+     - once the card has cleared the envelope, it switches z-index above
+       all flaps, then rotates upright + zooms to its hero pose
+   z-index starts at 1 (behind flaps) — the keyframe switches to 100
+   the moment the card has fully emerged from the slot.
    Portrait aspect ratio so a portrait invite art fits the card naturally. */
 .pp-env-card {
   position: absolute;
@@ -308,16 +312,12 @@ body {
   left: 50%;
   width: 60%;
   aspect-ratio: 0.72;
-  transform: translate(-50%, -50%) scale(0.55);
+  transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
   transform-origin: center center;
   background: linear-gradient(180deg, #ffffff 0%, #fff8ed 100%);
   border-radius: 6px;
   overflow: hidden;
-  /* z-index 100 from the start. The card is invisible (opacity 0) until
-     the flap has opened, so this can't bleed through visually — but it
-     means the moment the card IS visible, it's already in front of the
-     rotated pink top flap, no preserve-3d ambiguity. */
-  z-index: 100;
+  z-index: 1;
   opacity: 0;
   box-shadow:
     0 2px 6px rgba(0,0,0,0.10),
@@ -425,45 +425,49 @@ body {
   animation: pp-env-sparkle 1.6s ease-in-out infinite;
 }
 
-/* Wax-seal medallion. Slight rotation + radial highlight read as "real
-   pressed wax" rather than a flat sticker. The seal sits proud above
-   the seam (z-index 6, drop-shadow). */
+/* Die-cut sticker monogram. Like a custom party sticker stuck onto the
+   envelope at the seam: chunky white "die-cut" border, the party's
+   accent color filling the shape, a big chunky letter on top. Slight
+   tilt + soft drop-shadow so it sits proud of the envelope, not flat
+   against it. */
 .pp-env-seal-monogram {
-  width: clamp(46px, 9vw, 60px);
+  width: clamp(54px, 11vw, 74px);
   aspect-ratio: 1 / 1;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(circle at 32% 28%, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 38%),
-    radial-gradient(circle at 50% 50%, #c2273f 0%, #931a2c 55%, #5d0e1c 100%);
+  background: var(--accent, #E94F8A);
+  /* The "die-cut" effect: a thick white ring around the colored shape,
+     then a hairline of darker translucent edge for crispness, then a
+     soft drop shadow underneath for depth. */
   box-shadow:
-    0 1px 0 rgba(255, 220, 200, 0.22) inset,
-    0 -3px 6px rgba(0, 0, 0, 0.32) inset,
-    0 0 0 1.5px rgba(255, 255, 255, 0.10),
-    0 4px 9px rgba(40, 8, 15, 0.42),
-    0 1px 2px rgba(40, 8, 15, 0.30);
-  transform: translate(-50%, -50%) rotate(-7deg);
+    0 0 0 4px #ffffff,
+    0 0 0 5px rgba(20, 30, 60, 0.10),
+    0 6px 14px rgba(20, 30, 60, 0.22),
+    0 1px 2px rgba(20, 30, 60, 0.18);
+  transform: translate(-50%, -50%) rotate(-8deg);
   animation: pp-env-seal-pulse 3.4s ease-in-out infinite;
 }
 
 .pp-env-seal-letter {
+  /* Chunky bold serif letter, white on accent — reads as a sticker not
+     a wax seal. */
   font-family: var(--font-playful), "Playfair Display", Georgia, serif;
-  font-size: clamp(20px, 3.8vw, 28px);
-  font-weight: 700;
+  font-size: clamp(26px, 5vw, 38px);
+  font-weight: 800;
   line-height: 1;
-  color: #fde7c8;
-  letter-spacing: 0.01em;
+  color: #ffffff;
+  letter-spacing: 0;
   text-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.45),
-    0 0 6px rgba(255, 220, 200, 0.28);
-  /* Counter-rotate the letter so it reads upright on the tilted seal. */
-  transform: rotate(7deg);
+    0 1px 0 rgba(0, 0, 0, 0.18),
+    0 2px 4px rgba(0, 0, 0, 0.10);
+  /* Counter-rotate so the letter reads upright on the tilted sticker. */
+  transform: rotate(8deg);
 }
 
 @keyframes pp-env-seal-pulse {
-  0%, 100% { transform: translate(-50%, -50%) rotate(-7deg) scale(1); }
-  50%      { transform: translate(-50%, -50%) rotate(-7deg) scale(1.045); }
+  0%, 100% { transform: translate(-50%, -50%) rotate(-8deg) scale(1); }
+  50%      { transform: translate(-50%, -50%) rotate(-8deg) scale(1.04); }
 }
 
 .pp-env-hint {
@@ -491,20 +495,21 @@ body {
 .pp-env-settled .pp-env-flap {
   transform: rotateX(-180deg);
 }
-/* Card animation kicks in 1.0s AFTER the click, so the pink flap
-   (0.8s transition) has time to fully open + a small anticipation
-   pause before the card starts emerging. Total card animation is
-   2.0s, so the whole open sequence resolves at t=3.0s.
-   ease-out-quart so the card glides into its hero pose with strong
-   deceleration — magical floating, not a hard stop. */
+/* Card animation kicks in 1.0s AFTER the click, so the pink flap (0.8s
+   transition) has time to fully open + a 0.2s anticipation pause
+   before the card starts emerging. Total card animation is 2.5s, so
+   the whole open sequence resolves at t=3.5s. The easing is a strong
+   ease-out so the rotate+zoom phase decelerates into the hero pose. */
 .pp-env-opening .pp-env-card {
-  animation: pp-env-card-emerge 2.0s cubic-bezier(0.16, 1, 0.3, 1) 1.0s forwards;
+  animation: pp-env-card-emerge 2.5s cubic-bezier(0.22, 1, 0.36, 1) 1.0s forwards;
 }
 
-/* Envelope shells (back panel + all four flaps) fade out gradually
-   while the card emerges — slow 1.0s dissolve starting at t=1.0s,
-   fully gone by t=2.0s. The envelope visibly "dissolves" around the
-   rising card rather than snapping out. */
+/* Envelope shells (back panel + all four flaps) stay fully visible
+   during the card's slide-up phase so the card actually looks like
+   it's sliding through the envelope's slot. They start dissolving at
+   t=1.6s (just before the card reaches its emerged sideways position
+   at t=2.0s) and finish by t=2.2s — clearing the stage for the
+   card's rotate + zoom into hero pose. */
 .pp-env-opening .pp-env-back,
 .pp-env-opening .pp-env-side-flap,
 .pp-env-opening .pp-env-bottom-flap,
@@ -518,7 +523,7 @@ body {
 .pp-env-exiting .pp-env-bottom-flap,
 .pp-env-exiting .pp-env-flap {
   opacity: 0;
-  transition: opacity 1.0s ease 1.0s;
+  transition: opacity 0.6s ease 1.6s;
 }
 .pp-env-settled .pp-env-card {
   /* Hold the final keyframe state — scaled smaller than before (1.2×
@@ -538,32 +543,51 @@ body {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* Card animation — fade in at envelope center, then a slow eased glide
-   upward + scale-up to the hero pose. No rotation — the card stays
-   upright the whole way, so it reads as "card floating up out of the
-   envelope," not "card flipping in space." z-index is 100 throughout
-   (set on the base .pp-env-card rule), so the card is in front of the
-   rotated pink top flap from the instant it's visible — no preserve-3d
-   stacking ambiguity to worry about. */
+/* Card animation — the actual "card coming out of the envelope" motion.
+   Two phases:
+     1. SLIDE — card emerges sideways (rotated 90°) up through the
+        envelope's open slot, like a real card pulled edge-first from a
+        sleeve. Stays at z-index 1 (behind flaps) so the parts still
+        inside the envelope are correctly hidden by the flaps.
+     2. FLIP + ZOOM — once cleared, card jumps to z-index 100 (above
+        everything) and rotates upright while scaling up to the hero
+        pose. Slow eased deceleration via the ease-out-quart easing on
+        the .pp-env-opening rule. */
 @keyframes pp-env-card-emerge {
-  /* t=0 in animation (= t=1.0s after click): hidden, smaller than
-     resting size, sitting at envelope center */
+  /* t=0% (= t=1.0s after click): hidden inside envelope at center,
+     sideways, small. Behind flaps. */
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.55);
+    transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
+    z-index: 1;
   }
-  /* t=10% (~1.2s): card has faded in fully, still small, at envelope
-     center. This is the "card visible inside the now-open envelope"
-     moment — it lasts only a beat before the float-up begins. */
-  10% {
+  /* t=8% (~1.2s): visible, sideways, still at envelope center */
+  8% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(0.6);
+    transform: translate(-50%, -50%) rotate(90deg) scale(0.55);
+    z-index: 1;
   }
-  /* t=100% (= t=3.0s after click): hero pose — lifted 12vh up from
-     viewport center, scaled to 1.2×. */
+  /* t=40% (~2.0s): card has slid UP through the envelope's open slot,
+     still sideways. Last keyframe with z-index 1 (behind flaps). */
+  40% {
+    transform: translate(-50%, calc(-50% - 10vh)) rotate(90deg) scale(0.8);
+    z-index: 1;
+  }
+  /* t=41% (~2.025s): instant z-index switch the moment the card has
+     fully cleared the envelope. Card now sits in front of any
+     remaining flap remnants. */
+  41% {
+    transform: translate(-50%, calc(-50% - 10vh)) rotate(90deg) scale(0.8);
+    z-index: 100;
+  }
+  /* t=100% (= t=3.5s after click): hero pose — rotated upright, lifted
+     12vh from viewport center, scaled to 1.2×. The full 1.475s
+     between 41% and 100% is dedicated to the flip + zoom, so the
+     motion has time to feel deliberate, not snapped. */
   100% {
     opacity: 1;
-    transform: translate(-50%, calc(-50% - 12vh)) scale(1.2);
+    transform: translate(-50%, calc(-50% - 12vh)) rotate(0deg) scale(1.2);
+    z-index: 100;
   }
 }
 
