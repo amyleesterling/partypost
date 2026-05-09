@@ -83,6 +83,9 @@ Your Google Sheet's tabs:
 
 For most parties, the Sheet **is** your admin. The new `🎉 PartyPost` menu in your Sheet (added automatically when you open it) gives you one-click access to "Set up tabs", "Show Web App URL", "Send pending invitations", and a "What's left to fill in?" checklist — without ever opening the Apps Script editor again.
 
+<img width="1005" height="993" alt="image" src="https://github.com/user-attachments/assets/c39deb16-baab-4265-89be-7b5c1ee020f2" />
+
+
 ## Optional — Admin dashboard for sending invites
 
 If you'd rather click buttons than edit a spreadsheet, you can deploy a one-page admin dashboard for your party (~3 min one-time setup). It lets you:
