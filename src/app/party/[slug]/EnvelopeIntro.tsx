@@ -84,7 +84,7 @@ export function EnvelopeIntro({
     };
   }, [phase]);
 
-  function open() {
+  function open(originX?: number, originY?: number) {
     if (phase !== "closed") return;
     setPhase("opening");
     try {
@@ -92,19 +92,17 @@ export function EnvelopeIntro({
     } catch {
       /* ignore */
     }
-    fireOpenConfetti();
+    fireOpenConfetti(originX, originY);
     // Sequence:
-    //   0.0s click → seal vanishes, confetti, pink flap starts unfolding
-    //   0.0s → 0.8s pink flap unfolds fully (slow ease)
+    //   0.0s click → confetti from click point, pink flap starts opening
+    //   0.0s → 0.8s pink flap unfolds (smooth ease)
     //   0.8s → 1.0s anticipation pause — flap open, no card yet
-    //   1.0s → ~1.2s card fades in INSIDE envelope, sideways (rotated 90°)
-    //   1.2s → 2.0s card slides UP through the envelope's slot, sideways,
-    //               BEHIND the flaps (z-index 1) — looks like a card
-    //               sliding edge-first out of a sleeve
-    //   2.0s         z-index switches to 100 — card now in front
-    //   1.6s → 2.2s envelope shells dissolve in the background
-    //   2.0s → 3.5s card rotates upright + zooms to hero pose, slow ease-out
-    //   3.5s settled → RSVP button slides in
+    //   1.0s → 1.25s card fades in INSIDE envelope, sideways
+    //   1.0s → 2.5s envelope dissolves as a unit (back + all flaps fade)
+    //   1.25s → 1.625s card slides up partway, still behind shells (z=1)
+    //   1.625s        z-index switches to 100 — card in front
+    //   1.625s → 3.5s smooth glide: rotate upright + zoom to hero pose
+    //   3.5s          settled → RSVP button positioned below the card
     settleTimer.current = setTimeout(() => setPhase("settled"), 3500);
   }
 
@@ -125,7 +123,15 @@ export function EnvelopeIntro({
       role={isClosed ? "button" : undefined}
       tabIndex={isClosed ? 0 : undefined}
       aria-label={isClosed ? `Open invitation for ${partyTitle}` : undefined}
-      onClick={isClosed ? open : undefined}
+      onClick={
+        isClosed
+          ? (e) =>
+              open(
+                e.clientX / window.innerWidth,
+                e.clientY / window.innerHeight,
+              )
+          : undefined
+      }
       onKeyDown={
         isClosed
           ? (e) => {
@@ -254,36 +260,23 @@ function lastNameInitial(name?: string | null): string {
   return "";
 }
 
-/** Two-burst confetti when the user taps to open the envelope. Picks up
- *  the live theme accent + secondary so the celebration matches the
- *  party's vibe (beach blues, princess pinks, etc.). */
-function fireOpenConfetti() {
+/** Single confetti burst from the user's tap location — like the
+ *  envelope's seal popping right where they touched. Picks up the live
+ *  theme accent + secondary so the celebration matches the party's
+ *  vibe (beach blues, princess pinks, etc.). */
+function fireOpenConfetti(originX = 0.5, originY = 0.5) {
   if (typeof window === "undefined") return;
   const styles = getComputedStyle(document.documentElement);
   const accent = styles.getPropertyValue("--accent").trim() || "#E94F8A";
   const secondary = styles.getPropertyValue("--secondary").trim() || "#FFD166";
   const colors = [accent, secondary, "#ffffff", "#ffe5b4"];
-  // Center burst — feels like the seal popping open.
   confetti({
-    particleCount: 90,
-    spread: 95,
-    startVelocity: 42,
+    particleCount: 110,
+    spread: 100,
+    startVelocity: 45,
     ticks: 220,
-    origin: { x: 0.5, y: 0.45 },
+    origin: { x: originX, y: originY },
     colors,
     scalar: 1,
   });
-  // Slight follow-up burst from the bottom for a fountain effect.
-  setTimeout(() => {
-    confetti({
-      particleCount: 50,
-      angle: 90,
-      spread: 70,
-      startVelocity: 55,
-      ticks: 220,
-      origin: { x: 0.5, y: 0.85 },
-      colors,
-      scalar: 0.85,
-    });
-  }, 180);
 }

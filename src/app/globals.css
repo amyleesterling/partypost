@@ -489,40 +489,35 @@ body {
 .pp-env-settled .pp-env-flap {
   transform: rotateX(-180deg);
 }
-/* Card animation kicks in 1.0s AFTER the click, so the pink flap (0.8s
-   transition) has time to fully open + a 0.2s anticipation pause
-   before the card starts emerging. Total card animation is 2.5s, so
-   the whole open sequence resolves at t=3.5s. The easing is a strong
-   ease-out so the rotate+zoom phase decelerates into the hero pose. */
+/* Card animation kicks in 1.0s AFTER the click, so the pink flap
+   (0.8s transition) has time to fully open + a 0.2s anticipation
+   pause. Total animation is 2.5s — full open sequence resolves at
+   t=3.5s. Easing is Material's standard cubic-bezier(0.4, 0, 0.2, 1)
+   — a smooth ease-in-out that doesn't front-load or back-load the
+   motion. Combined with simpler keyframes this reads as smooth glide
+   rather than jerky stop-and-start. */
 .pp-env-opening .pp-env-card {
-  animation: pp-env-card-emerge 2.5s cubic-bezier(0.22, 1, 0.36, 1) 1.0s forwards;
+  animation: pp-env-card-emerge 2.5s cubic-bezier(0.4, 0, 0.2, 1) 1.0s forwards;
 }
 
-/* The PINK TOP FLAP fades early — out of the way before the card
-   rotates upright into its area. Starts at t=1.0s, gone by t=1.6s.
-   Separate from other shells so we can time it independently. */
-.pp-env-opening .pp-env-flap,
-.pp-env-settled .pp-env-flap,
-.pp-env-exiting .pp-env-flap {
-  opacity: 0;
-  transition: opacity 0.6s ease 1.0s;
-}
-
-/* Other shells (back panel, left/right side flaps, bottom flap) stay
-   fully visible during the card's slide-up phase, then dissolve
-   gracefully over a slow 1.5s — the envelope softly melts away around
-   the rising card rather than snapping out. */
+/* The envelope is ONE piece — back panel + all four flaps fade
+   together on the same timeline so the envelope dissolves as a unit,
+   not in disconnected pieces. Slow 1.5s fade starting at t=1.0s
+   (right when the card emerges), finishing at t=2.5s. */
 .pp-env-opening .pp-env-back,
 .pp-env-opening .pp-env-side-flap,
 .pp-env-opening .pp-env-bottom-flap,
+.pp-env-opening .pp-env-flap,
 .pp-env-settled .pp-env-back,
 .pp-env-settled .pp-env-side-flap,
 .pp-env-settled .pp-env-bottom-flap,
+.pp-env-settled .pp-env-flap,
 .pp-env-exiting .pp-env-back,
 .pp-env-exiting .pp-env-side-flap,
-.pp-env-exiting .pp-env-bottom-flap {
+.pp-env-exiting .pp-env-bottom-flap,
+.pp-env-exiting .pp-env-flap {
   opacity: 0;
-  transition: opacity 1.5s ease 2.0s;
+  transition: opacity 1.5s ease 1.0s;
 }
 .pp-env-settled .pp-env-card {
   /* Hold the final keyframe state — scaled to 1.1× and lifted 16vh up
@@ -552,42 +547,36 @@ body {
         everything) and rotates upright while scaling up to the hero
         pose. Slow eased deceleration via the ease-out-quart easing on
         the .pp-env-opening rule. */
+/* Four keyframes total — fewer points = smoother interpolation.
+   The motion is one continuous glide from "inside envelope, sideways"
+   to "hero pose, upright" with the z-index flip happening along the
+   way (right when the envelope fade is half done). */
 @keyframes pp-env-card-emerge {
-  /* t=0% (= t=1.0s after click): hidden inside envelope at center,
-     sideways, small. Behind ALL flaps. */
+  /* t=0% (= t=1.0s after click): hidden, sideways, small, inside the
+     envelope. Behind all shells (z-index 1). */
   0% {
     opacity: 0;
     transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
     z-index: 1;
   }
-  /* t=8% (~1.2s): visible, sideways, still at envelope center */
-  8% {
+  /* t=10% (~1.25s): faded in. Still sideways, still inside envelope. */
+  10% {
     opacity: 1;
     transform: translate(-50%, -50%) rotate(90deg) scale(0.55);
     z-index: 1;
   }
-  /* t=23% (~1.575s): card has slid up partway through the slot. Last
-     frame at z-index 1 — pink flap is fading out around now (gone by
-     1.6s), so this is the moment to flip in front. */
-  23% {
-    transform: translate(-50%, calc(-50% - 4vh)) rotate(90deg) scale(0.65);
-    z-index: 1;
-  }
-  /* t=24% (~1.6s): instant z-index switch — card now in FRONT of all
-     shells. Pink flap is gone. Side/bottom/back are still visible
-     (they fade slowly until t=3.5s) but the card is on top of them. */
-  24% {
-    transform: translate(-50%, calc(-50% - 4vh)) rotate(90deg) scale(0.65);
+  /* t=25% (~1.625s): card has slid up partway through the slot. The
+     envelope is ~40% faded by now (started at t=1.0s, finishes
+     t=2.5s) so the card moves to z-index 100 — in front of the
+     remaining envelope as it dissolves. */
+  25% {
+    transform: translate(-50%, calc(-50% - 6vh)) rotate(90deg) scale(0.7);
     z-index: 100;
   }
-  /* t=40% (~2.0s): card has slid fully up, still sideways, lifted */
-  40% {
-    transform: translate(-50%, calc(-50% - 10vh)) rotate(90deg) scale(0.8);
-    z-index: 100;
-  }
-  /* t=100% (= t=3.5s after click): hero pose — rotated upright, lifted
-     16vh from viewport center, scaled to 1.1×. The full 1.5s between
-     40% and 100% is dedicated to the flip + zoom. */
+  /* t=100% (= t=3.5s after click): hero pose — upright, lifted 16vh
+     from viewport center, scaled to 1.1×. The 75% of the timeline
+     between 25% and 100% interpolates the rotation, the rest of the
+     rise, and the zoom — all at once, one smooth motion. */
   100% {
     opacity: 1;
     transform: translate(-50%, calc(-50% - 16vh)) rotate(0deg) scale(1.1);
