@@ -446,7 +446,6 @@ body {
     0 6px 14px rgba(20, 30, 60, 0.22),
     0 1px 2px rgba(20, 30, 60, 0.18);
   transform: translate(-50%, -50%) rotate(-8deg);
-  animation: pp-env-seal-pulse 3.4s ease-in-out infinite;
 }
 
 .pp-env-seal-letter {
@@ -463,11 +462,6 @@ body {
     0 2px 4px rgba(0, 0, 0, 0.10);
   /* Counter-rotate so the letter reads upright on the tilted sticker. */
   transform: rotate(8deg);
-}
-
-@keyframes pp-env-seal-pulse {
-  0%, 100% { transform: translate(-50%, -50%) rotate(-8deg) scale(1); }
-  50%      { transform: translate(-50%, -50%) rotate(-8deg) scale(1.04); }
 }
 
 .pp-env-hint {
