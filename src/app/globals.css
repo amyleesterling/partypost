@@ -236,7 +236,10 @@ body {
 
 .pp-env {
   position: relative;
-  width: min(92vw, 480px);
+  /* Cap by viewport HEIGHT too so on short/landscape viewports the
+     envelope (and therefore the scaled card) never grows tall enough
+     to collide with the RSVP button at the bottom. */
+  width: min(92vw, 480px, 70vh);
   aspect-ratio: 1.42 / 1;
   perspective: 1200px;
   transform-style: preserve-3d;
@@ -292,11 +295,12 @@ body {
   border-radius: 0 10px 10px 0;
 }
 
-/* Card sits inside the envelope. While closed, it's hidden inside (opacity 0).
-   On open, a keyframe choreographs:
-     - emerge sideways (rotated 90deg) sliding up out of the envelope
-     - rotate upright (0deg) and zoom into the foreground
-     - settle centered on screen, large
+/* Card sits at the envelope's center while closed (opacity 0, hidden).
+   On open, a keyframe choreographs (after the flap has already opened):
+     - card fades in at envelope center, small
+     - card glides upward and grows to a hero pose
+   No rotation — the card stays upright the whole way, so it reads as
+   "card floating up out of the envelope," not "card flipping in space."
    Portrait aspect ratio so a portrait invite art fits the card naturally. */
 .pp-env-card {
   position: absolute;
@@ -304,14 +308,16 @@ body {
   left: 50%;
   width: 60%;
   aspect-ratio: 0.72;
-  transform: translate(-50%, -50%) rotate(90deg) scale(0.7);
+  transform: translate(-50%, -50%) scale(0.55);
   transform-origin: center center;
   background: linear-gradient(180deg, #ffffff 0%, #fff8ed 100%);
   border-radius: 6px;
   overflow: hidden;
-  z-index: 1; /* starts BEHIND the flaps so it looks like it's inside
-                 the envelope; jumps above them mid-animation once the
-                 card has cleared the envelope opening */
+  /* z-index 100 from the start. The card is invisible (opacity 0) until
+     the flap has opened, so this can't bleed through visually — but it
+     means the moment the card IS visible, it's already in front of the
+     rotated pink top flap, no preserve-3d ambiguity. */
+  z-index: 100;
   opacity: 0;
   box-shadow:
     0 2px 6px rgba(0,0,0,0.10),
@@ -382,7 +388,9 @@ body {
 }
 
 /* Top flap — triangle pointing DOWN from top edge to envelope center.
-   Rotates open around its top edge. */
+   Rotates open around its top edge. Slowed to 0.8s with a smooth
+   ease-in-out so the unfolding has weight — like real paper, not a
+   light switch. */
 .pp-env-flap {
   position: absolute;
   top: 0;
@@ -393,7 +401,7 @@ body {
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   transform-origin: top center;
   transform: rotateX(0);
-  transition: transform 0.65s cubic-bezier(.5,.1,.5,1);
+  transition: transform 0.8s cubic-bezier(0.45, 0.05, 0.25, 1);
   z-index: 5;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.14));
   border-radius: 10px 10px 0 0;
@@ -483,17 +491,20 @@ body {
 .pp-env-settled .pp-env-flap {
   transform: rotateX(-180deg);
 }
+/* Card animation kicks in 1.0s AFTER the click, so the pink flap
+   (0.8s transition) has time to fully open + a small anticipation
+   pause before the card starts emerging. Total card animation is
+   2.0s, so the whole open sequence resolves at t=3.0s.
+   ease-out-quart so the card glides into its hero pose with strong
+   deceleration — magical floating, not a hard stop. */
 .pp-env-opening .pp-env-card {
-  animation: pp-env-card-emerge 2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
+  animation: pp-env-card-emerge 2.0s cubic-bezier(0.16, 1, 0.3, 1) 1.0s forwards;
 }
 
-/* Fade the envelope shells (back panel, flaps) out DURING opening, on
-   the same beat as the card moving in front of them (~1.4s into the
-   2.4s opening sequence). This keeps the rotated pink top flap from
-   showing in front of the card after it has emerged — z-index in a
-   `transform-style: preserve-3d` context is unreliable when one
-   sibling has a 3D rotation, so the safest fix is to make the flap
-   fully transparent before the card needs to be in front of it. */
+/* Envelope shells (back panel + all four flaps) fade out gradually
+   while the card emerges — slow 1.0s dissolve starting at t=1.0s,
+   fully gone by t=2.0s. The envelope visibly "dissolves" around the
+   rising card rather than snapping out. */
 .pp-env-opening .pp-env-back,
 .pp-env-opening .pp-env-side-flap,
 .pp-env-opening .pp-env-bottom-flap,
@@ -507,13 +518,14 @@ body {
 .pp-env-exiting .pp-env-bottom-flap,
 .pp-env-exiting .pp-env-flap {
   opacity: 0;
-  transition: opacity 0.45s ease 1.0s;
+  transition: opacity 1.0s ease 1.0s;
 }
 .pp-env-settled .pp-env-card {
-  /* Hold the final keyframe state — bigger than emergence and lifted
-     up so the RSVP button sits cleanly below it. */
+  /* Hold the final keyframe state — scaled smaller than before (1.2×
+     instead of 1.4×) and lifted higher (12vh) so the RSVP button at
+     the bottom of the viewport ALWAYS has clearance below the card. */
   opacity: 1;
-  transform: translate(-50%, calc(-50% - 8vh)) rotate(0) scale(1.4);
+  transform: translate(-50%, calc(-50% - 12vh)) scale(1.2);
   z-index: 100;
   box-shadow:
     0 28px 56px -14px rgba(20, 30, 60, 0.42),
@@ -526,39 +538,32 @@ body {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* Card animation — emerges sideways out of the envelope (rotated 90°),
-   rotates upright + zooms forward, settles at 1.55× scale lifted slightly
-   above viewport center so the fixed-bottom RSVP button has room. Each
-   keyframe uses ease-in-out timing so the segment-to-segment motion is
-   continuous (no jerky direction changes). */
+/* Card animation — fade in at envelope center, then a slow eased glide
+   upward + scale-up to the hero pose. No rotation — the card stays
+   upright the whole way, so it reads as "card floating up out of the
+   envelope," not "card flipping in space." z-index is 100 throughout
+   (set on the base .pp-env-card rule), so the card is in front of the
+   rotated pink top flap from the instant it's visible — no preserve-3d
+   stacking ambiguity to worry about. */
 @keyframes pp-env-card-emerge {
+  /* t=0 in animation (= t=1.0s after click): hidden, smaller than
+     resting size, sitting at envelope center */
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
-    z-index: 1;
+    transform: translate(-50%, -50%) scale(0.55);
   }
+  /* t=10% (~1.2s): card has faded in fully, still small, at envelope
+     center. This is the "card visible inside the now-open envelope"
+     moment — it lasts only a beat before the float-up begins. */
   10% {
     opacity: 1;
-    transform: translate(-50%, -52%) rotate(90deg) scale(0.55);
-    z-index: 1;
+    transform: translate(-50%, -50%) scale(0.6);
   }
-  /* Up through 49% the card is still emerging from the envelope's
-     opening — keep it BEHIND the flaps so the bottom/side flaps cover
-     the part still inside, like a real card sliding out. */
-  49% {
-    transform: translate(-50%, calc(-50% - 8vh)) rotate(90deg) scale(0.85);
-    z-index: 1;
-  }
-  /* Once the card has cleared the envelope, jump to a high z-index so
-     it sits above all flaps for the rotate + zoom. */
-  50% {
-    transform: translate(-50%, calc(-50% - 8vh)) rotate(90deg) scale(0.85);
-    z-index: 100;
-  }
+  /* t=100% (= t=3.0s after click): hero pose — lifted 12vh up from
+     viewport center, scaled to 1.2×. */
   100% {
-    /* rotates upright + finishes zoom in place */
-    transform: translate(-50%, calc(-50% - 8vh)) rotate(0deg) scale(1.4);
-    z-index: 100;
+    opacity: 1;
+    transform: translate(-50%, calc(-50% - 12vh)) scale(1.2);
   }
 }
 
@@ -567,9 +572,11 @@ body {
    that occupies the middle of the screen. */
 .pp-env-rsvp-btn {
   position: fixed;
-  /* Pinned a hair above the bottom of the viewport so it's visible on
-     every screen size, regardless of how tall the settled card grows. */
-  bottom: max(28px, calc(env(safe-area-inset-bottom) + 5vh));
+  /* Pinned well above the bottom of the viewport so it always clears
+     the settled card (12vh-lifted, 1.2× scale, capped against viewport
+     height via the .pp-env width clamp). 7vh + safe-area gives ~70px
+     of clearance even on shorter laptop viewports. */
+  bottom: max(36px, calc(env(safe-area-inset-bottom) + 7vh));
   left: 50%;
   transform: translateX(-50%);
   z-index: 110;
@@ -616,7 +623,7 @@ body {
 .pp-env-exiting .pp-env-card {
   /* keep settled transform during fade */
   opacity: 1;
-  transform: translate(-50%, calc(-50% - 8vh)) rotate(0) scale(1.4);
+  transform: translate(-50%, calc(-50% - 12vh)) scale(1.2);
   z-index: 100;
 }
 .pp-env-exiting .pp-env-flap { transform: rotateX(-180deg); }

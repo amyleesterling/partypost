@@ -55,8 +55,14 @@ export function EnvelopeIntro({
       /* ignore */
     }
     fireOpenConfetti();
-    // Card animation runs 0.4s delay + 2.0s emerge → ~2.4s total.
-    settleTimer.current = setTimeout(() => setPhase("settled"), 2400);
+    // Sequence:
+    //   0.0s click → seal vanishes, confetti, pink flap starts unfolding
+    //   0.0s → 0.8s pink flap unfolds fully
+    //   0.8s → 1.0s anticipation pause (flap open, no card yet)
+    //   1.0s → ~1.2s card fades in at envelope center (peeking from inside)
+    //   1.2s → 3.0s card glides upward + grows to hero pose (eased)
+    //   3.0s settled → RSVP button slides in
+    settleTimer.current = setTimeout(() => setPhase("settled"), 3000);
   }
 
   function dismiss() {
