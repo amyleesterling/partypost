@@ -32,6 +32,9 @@ Location: [LOCATION]
 
 The AI will walk you through creating a Google Sheet for your party, pasting the script, and pasting **one** JSON line into your Vercel Environment Variables. **No code editing.** ~10 min for the first party, ~5 min for each one after.
 
+<img width="1029" height="724" alt="image" src="https://github.com/user-attachments/assets/62c9f335-b540-4622-8ea2-b42eccdb03f1" />
+
+
 Click-by-click reference: [`apps-script/SETUP.md`](apps-script/SETUP.md).
 
 ---
