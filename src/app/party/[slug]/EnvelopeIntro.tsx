@@ -10,11 +10,13 @@ const SESSION_KEY = "pp-envelope-seen";
 export function EnvelopeIntro({
   partyTitle,
   birthdayChildName,
+  hostName,
   date,
   inviteImageUrl,
 }: {
   partyTitle: string;
   birthdayChildName?: string | null;
+  hostName?: string | null;
   date?: string | null;
   inviteImageUrl?: string | null;
 }) {
@@ -66,6 +68,7 @@ export function EnvelopeIntro({
 
   const dateLabel = formatDateForCard(date);
   const isClosed = phase === "closed";
+  const monogram = getMonogram(birthdayChildName, hostName);
 
   return (
     <div
@@ -126,7 +129,13 @@ export function EnvelopeIntro({
           </div>
           <div className="pp-env-flap" />
           {isClosed && (
-            <div className="pp-env-seal" aria-hidden="true">✨</div>
+            monogram ? (
+              <div className="pp-env-seal pp-env-seal-monogram" aria-hidden="true">
+                <span className="pp-env-seal-letter">{monogram}</span>
+              </div>
+            ) : (
+              <div className="pp-env-seal pp-env-seal-sparkle" aria-hidden="true">✨</div>
+            )
           )}
         </div>
 
@@ -157,6 +166,40 @@ function formatDateForCard(d: string | null | undefined): string {
     "July", "August", "September", "October", "November", "December",
   ];
   return `${months[m - 1]} ${day}, ${y}`;
+}
+
+/** Pull the first letter of the LAST name from the birthday child (or
+ *  fall back to the host) for the wax-seal monogram.
+ *
+ *  Examples:
+ *    "Sophia Sterling"      → "S"
+ *    "Oliver Twist"         → "T"
+ *    "Sophia"  (single)     → "S"  (only word — works as monogram)
+ *    "Roomba 615"           → "R"  (last word starts with digit → use first)
+ *    "The Crew" (host)      → "C"  ("The " stripped)
+ *    "Will & Amy Sterling"  → "S"
+ *    ""                     → ""   (caller falls back to ✨)
+ */
+function getMonogram(child?: string | null, host?: string | null): string {
+  return lastNameInitial(child) || lastNameInitial(host) || "";
+}
+
+function lastNameInitial(name?: string | null): string {
+  if (!name) return "";
+  const cleaned = name.replace(/^the\s+/i, "").trim();
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (!parts.length) return "";
+  // Strip trailing punctuation off the last word, then take the first
+  // alphanumeric character. If it's a letter, that's our monogram.
+  const last = parts[parts.length - 1].replace(/[^A-Za-z0-9]+$/, "");
+  if (last && /^[A-Za-z]/.test(last)) return last[0].toUpperCase();
+  // Last word starts with a digit (e.g. "Roomba 615") — fall back to
+  // the first word's first letter.
+  for (const word of parts) {
+    const stripped = word.replace(/[^A-Za-z0-9]+/g, "");
+    if (stripped && /^[A-Za-z]/.test(stripped)) return stripped[0].toUpperCase();
+  }
+  return "";
 }
 
 /** Two-burst confetti when the user taps to open the envelope. Picks up

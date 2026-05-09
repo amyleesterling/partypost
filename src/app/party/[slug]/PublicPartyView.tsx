@@ -48,6 +48,7 @@ export function PublicPartyView({
       <EnvelopeIntro
         partyTitle={party.party_title}
         birthdayChildName={party.birthday_child_name}
+        hostName={party.host_name}
         date={party.date}
         inviteImageUrl={inviteImage(party)}
       />
