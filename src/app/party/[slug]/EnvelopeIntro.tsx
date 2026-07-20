@@ -97,11 +97,12 @@ export function EnvelopeIntro({
     //   0.0s click → confetti from click point, pink flap starts opening
     //   0.0s → 0.8s pink flap unfolds (smooth ease)
     //   0.8s → 1.0s anticipation pause — flap open, no card yet
-    //   1.0s → 1.25s card fades in INSIDE envelope, sideways
-    //   1.0s → 2.5s envelope dissolves as a unit (back + all flaps fade)
-    //   1.25s → 1.625s card slides up partway, still behind shells (z=1)
-    //   1.625s        z-index switches to 100 — card in front
-    //   1.625s → 3.5s smooth glide: rotate upright + zoom to hero pose
+    //   1.0s → 1.25s card fades in INSIDE envelope, sideways (z=1)
+    //   1.25s → 2.0s card rises sideways to -32vh (still z=1, clipped
+    //                by green/blue side flaps until bottom edge clears)
+    //   2.0s          z-index swaps to 100 — card now in front of envelope
+    //   2.0s → 3.5s   rotate upright + scale to 1.1× + ease down to -16vh
+    //   3.4s → 4.0s   envelope (back + flaps) dissolves
     //   3.5s          settled → RSVP button positioned below the card
     settleTimer.current = setTimeout(() => setPhase("settled"), 3500);
   }
