@@ -15,12 +15,11 @@ type SearchParams = Promise<{ i?: string }>;
 
 export const revalidate = 60; // re-fetch sheet at most every 60s
 
-// Banner art is authored wide (often 3:1) and heavy, which link scrapers
-// letterbox and iMessage tends to drop outright. Where a purpose-built
-// 1200x630 share image exists in public/, point previews at that instead.
-// Keyed by slug because real parties are configured via env var, not here.
-const SHARE_IMAGE_BY_SLUG: Record<string, string> = {
-  "sophia-7": "/sophia-7-share.jpg",
+// PNG banner art runs multiple MB, which iMessage drops for size. Point
+// previews at a full-resolution JPEG of the same art instead. Keyed by slug
+// because real parties are configured via env var, not here.
+const SHARE_IMAGE_BY_SLUG: Record<string, { url: string; width: number; height: number }> = {
+  "sophia-7": { url: "/sophia-7-banner.jpg", width: 2172, height: 724 },
 };
 
 export async function generateMetadata({
@@ -54,7 +53,7 @@ export async function generateMetadata({
     "You're invited!";
   // Prefer a purpose-built share image; fall back to the landscape banner,
   // which still beats the portrait invite in a preview card.
-  const image = share ?? bannerImage(party);
+  const image = share?.url ?? bannerImage(party);
   const url = `${siteUrl()}/party/${slug}`;
 
   return {
@@ -70,7 +69,7 @@ export async function generateMetadata({
             {
               url: absoluteUrl(image),
               alt: title,
-              ...(share ? { width: 1200, height: 630 } : {}),
+              ...(share ? { width: share.width, height: share.height } : {}),
             },
           ]
         : undefined,
