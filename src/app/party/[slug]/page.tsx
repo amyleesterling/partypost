@@ -1,7 +1,9 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { findParty } from "@/config/parties";
-import { fetchPartyBundle } from "@/lib/sheets";
+import { fetchPartyBundle, fetchPartyOnly } from "@/lib/sheets";
+import { formatPartyDateLong } from "@/lib/format";
 import { bannerImage } from "@/lib/partyImages";
 import { getTheme, themeCssVars, type ThemeTokens } from "@/lib/themes";
 import { extractPaletteFromUrl, applyPaletteOverride } from "@/lib/extractPalette";
@@ -12,6 +14,70 @@ type Params = { slug: string };
 type SearchParams = Promise<{ i?: string }>;
 
 export const revalidate = 60; // re-fetch sheet at most every 60s
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<Params>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const entry = findParty(slug);
+  if (!entry) return {};
+
+  let party;
+  if (entry.fixture) {
+    party = entry.fixture.party;
+  } else if (entry.scriptUrl) {
+    try {
+      party = await fetchPartyOnly(entry.scriptUrl);
+    } catch {
+      return {};
+    }
+  } else {
+    return {};
+  }
+
+  const title = party.party_title || `${party.birthday_child_name}'s Birthday`;
+  const when = formatPartyDateLong(party.date);
+  const description =
+    party.description ||
+    [when, party.location_name].filter(Boolean).join(" · ") ||
+    "You're invited!";
+  // Landscape banner crops better than the portrait invite in link previews.
+  const image = bannerImage(party);
+  const url = `${siteUrl()}/party/${slug}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url,
+      type: "website",
+      images: image ? [{ url: absoluteUrl(image), alt: title }] : undefined,
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: image ? [absoluteUrl(image)] : undefined,
+    },
+  };
+}
+
+function siteUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
+  if (explicit) return explicit.replace(/\/$/, "");
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercel) return `https://${vercel}`;
+  return "https://partypost.vercel.app";
+}
+
+function absoluteUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  return siteUrl() + (url.startsWith("/") ? url : "/" + url);
+}
 
 export default async function PublicPartyPage({
   params,
@@ -80,8 +146,3 @@ export default async function PublicPartyPage({
   );
 }
 
-function absoluteUrl(url: string): string {
-  if (/^https?:\/\//i.test(url)) return url;
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://partypost.vercel.app").replace(/\/$/, "");
-  return base + (url.startsWith("/") ? url : "/" + url);
-}
