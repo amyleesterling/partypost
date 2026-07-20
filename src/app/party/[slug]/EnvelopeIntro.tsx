@@ -69,18 +69,47 @@ export function EnvelopeIntro({
       const cardRect = card.getBoundingClientRect();
       const btnHeight = btn.offsetHeight || 50;
       const desiredTop = cardRect.bottom + 28; // 28px gap below card
-      // Don't push the button off-screen on tiny viewports — clamp so
-      // it stays at least 16px from the bottom edge.
-      const maxTop = window.innerHeight - btnHeight - 16;
-      const top = Math.min(desiredTop, maxTop);
+      // visualViewport excludes mobile browser chrome; innerHeight does
+      // not, so clamping against it hides the button behind the URL bar.
+      const viewportH = window.visualViewport?.height ?? window.innerHeight;
+      const maxTop = viewportH - btnHeight - 16;
+      // .pp-env-stage carries a transform, which makes it the containing
+      // block for this position:fixed button. Rects are viewport-space, so
+      // rebase onto the stage or the button lands ~stageTop px too low.
+      const originTop = (btn.offsetParent as HTMLElement | null)
+        ?.getBoundingClientRect().top ?? 0;
+      // The button keeps a resting translateY from its enter animation;
+      // subtract it so the 28px above is the gap actually rendered.
+      const restingShiftY = new DOMMatrix(getComputedStyle(btn).transform).f;
+      const top = Math.min(desiredTop, maxTop) - originTop - restingShiftY;
       setButtonStyle({ top: `${top}px`, bottom: "auto" });
     }
-    // Run on next frame so the card transform is committed first.
-    const raf = requestAnimationFrame(update);
-    window.addEventListener("resize", update);
+    // Both the card and the button's enter animation are still moving when
+    // this runs, and each feeds the math above, so re-measure until they
+    // come to rest. Driven by a timer rather than rAF: rAF is paused in
+    // hidden tabs, which would leave the button at its unpositioned spot.
+    const settleStart = performance.now();
+    update();
+    const settleTick = setInterval(() => {
+      update();
+      if (performance.now() - settleStart >= 1500) clearInterval(settleTick);
+    }, 100);
+    // The card sits at a vh-based offset, so on resize it moves after the
+    // event fires. Re-measure a tick later or we read its stale box.
+    let resizeTimers: ReturnType<typeof setTimeout>[] = [];
+    const onResize = () => {
+      resizeTimers.forEach(clearTimeout);
+      resizeTimers = [50, 150, 350, 600].map((ms) => setTimeout(update, ms));
+    };
+    window.addEventListener("resize", onResize);
+    window.visualViewport?.addEventListener("resize", onResize);
+    window.visualViewport?.addEventListener("scroll", onResize);
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", update);
+      clearInterval(settleTick);
+      resizeTimers.forEach(clearTimeout);
+      window.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener("scroll", onResize);
     };
   }, [phase]);
 
