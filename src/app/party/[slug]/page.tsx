@@ -15,6 +15,14 @@ type SearchParams = Promise<{ i?: string }>;
 
 export const revalidate = 60; // re-fetch sheet at most every 60s
 
+// Banner art is authored wide (often 3:1) and heavy, which link scrapers
+// letterbox and iMessage tends to drop outright. Where a purpose-built
+// 1200x630 share image exists in public/, point previews at that instead.
+// Keyed by slug because real parties are configured via env var, not here.
+const SHARE_IMAGE_BY_SLUG: Record<string, string> = {
+  "sophia-7": "/sophia-7-share.jpg",
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -37,14 +45,16 @@ export async function generateMetadata({
     return {};
   }
 
+  const share = SHARE_IMAGE_BY_SLUG[slug];
   const title = party.party_title || `${party.birthday_child_name}'s Birthday`;
   const when = formatPartyDateLong(party.date);
   const description =
     party.description ||
     [when, party.location_name].filter(Boolean).join(" · ") ||
     "You're invited!";
-  // Landscape banner crops better than the portrait invite in link previews.
-  const image = bannerImage(party);
+  // Prefer a purpose-built share image; fall back to the landscape banner,
+  // which still beats the portrait invite in a preview card.
+  const image = share ?? bannerImage(party);
   const url = `${siteUrl()}/party/${slug}`;
 
   return {
@@ -55,7 +65,15 @@ export async function generateMetadata({
       description,
       url,
       type: "website",
-      images: image ? [{ url: absoluteUrl(image), alt: title }] : undefined,
+      images: image
+        ? [
+            {
+              url: absoluteUrl(image),
+              alt: title,
+              ...(share ? { width: 1200, height: 630 } : {}),
+            },
+          ]
+        : undefined,
     },
     twitter: {
       card: image ? "summary_large_image" : "summary",
