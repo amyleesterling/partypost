@@ -55,9 +55,9 @@ export function RsvpForm({
   } = useForm<RsvpInput, unknown, RsvpOutput>({
     resolver: zodResolver(rsvpSchema),
     defaultValues: {
-      // No pre-selection on a fresh visit — let the click trigger the
-      // confetti / "no" toast. For edits we restore the saved choice.
-      status: initial?.status as "yes" | "no" | undefined,
+      // Default to "yes" so the optimistic path is one tap shorter. Confetti
+      // still only fires on an actual click, not on this prefill.
+      status: (initial?.status as "yes" | "no" | undefined) ?? "yes",
       parent_names: initial?.parent_names ?? "",
       email: initial?.email ?? "",
       phone: initial?.phone ?? "",

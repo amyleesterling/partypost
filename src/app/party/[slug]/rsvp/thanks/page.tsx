@@ -91,6 +91,19 @@ export default async function ThanksPage({
                 Back to party
               </Link>
             </div>
+
+            <p className="mt-8 text-xs pp-muted">
+              This party invite system was built with Claude. The code is open
+              source at{" "}
+              <a
+                href="https://github.com/amyleesterling/partypost"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:opacity-70"
+              >
+                github.com/amyleesterling/partypost
+              </a>
+            </p>
           </div>
         </div>
       </main>
