@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { PartyData, PublicNote } from "@/lib/sheets";
 import { bannerImage } from "@/lib/partyImages";
-import { formatPartyDateLong, formatTimeRange, googleMapsEmbedUrl, googleMapsUrl } from "@/lib/format";
+import { formatPartyDate, formatTimeRange, googleMapsEmbedUrl, googleMapsUrl } from "@/lib/format";
 import { RsvpForm } from "./RsvpForm";
 import { NoteWall } from "./NoteWall";
 import { CalendarAddButton } from "./CalendarAddButton";
@@ -37,7 +37,7 @@ export function PublicPartyView({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const dateStr = formatPartyDateLong(party.date);
+  const dateStr = formatPartyDate(party.date);
   const timeStr = formatTimeRange(party.start_time, party.end_time);
   const mapHref = party.map_url || googleMapsUrl(party.location_address, party.location_name);
   const mapEmbedSrc = googleMapsEmbedUrl(party.location_address, party.location_name);
@@ -79,81 +79,42 @@ export function PublicPartyView({
           )}
         </div>
 
-        {/* RSVP — leads with the description, then the form */}
-        <section id="rsvp" className="pp-enter mt-8 pp-card px-6 py-7 sm:px-8 sm:py-8" style={{ animationDelay: "0.08s" }}>
-          {party.description && (
-            <p className="mb-6 whitespace-pre-wrap text-[1.0625rem] leading-relaxed pp-muted">
-              {party.description}
-            </p>
-          )}
-          <span className="pp-section-rule" />
-          <h2 className="flex items-baseline gap-3 text-3xl font-bold tracking-tight">
-            <span>RSVP</span>
-            <span aria-hidden className="pp-wiggle inline-block text-2xl">🎉</span>
-          </h2>
-          <div className="mt-6">
-            <RsvpForm
-              slug={slug}
-              scriptUrl={scriptUrl}
-              isDemo={isDemo}
-              inviteToken={inviteToken}
-            />
-          </div>
-        </section>
-
-        {party.profile_image_url && (
-          <div className="pp-enter mt-6 flex items-center gap-5 pp-card px-6 py-5" style={{ animationDelay: "0.16s" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={party.profile_image_url}
-              alt={party.birthday_child_name}
-              className="h-20 w-20 rounded-full object-cover ring-4 ring-white shadow-md"
-            />
-            <div>
-              <div className="text-xs uppercase tracking-widest pp-muted">The birthday star</div>
-              <div className="mt-0.5 text-xl font-semibold">{party.birthday_child_name}</div>
-            </div>
-          </div>
-        )}
-
-        <section className="pp-enter mt-6 pp-card px-6 py-6 sm:px-8 sm:py-7" style={{ animationDelay: "0.24s" }}>
-          <span className="pp-section-rule" />
-          <h2 className="text-2xl font-bold tracking-tight">Party details</h2>
-          <dl className="mt-5 grid gap-4 text-[0.95rem]">
+        {/* The essentials — emoji-led rows, no headings */}
+        <section className="pp-enter mt-6 pp-card px-6 py-6 sm:px-8 sm:py-7" style={{ animationDelay: "0.08s" }}>
+          <div className="grid gap-3.5 text-[1rem]">
             {(dateStr || timeStr) && (
-              <Row label="When">
-                {dateStr}
+              <Fact emoji="📅">
+                <span className="font-semibold">{dateStr}</span>
                 {dateStr && timeStr && " · "}
                 {timeStr}
-              </Row>
+              </Fact>
             )}
             {(party.location_name || party.location_address) && (
-              <Row label="Where">
-                <div>
-                  {party.location_name && <div className="font-semibold">{party.location_name}</div>}
-                  {party.location_address && <div className="pp-muted">{party.location_address}</div>}
-                  {mapHref && (
-                    <a
-                      href={mapHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-1.5 inline-block text-sm font-semibold underline-offset-4 hover:underline"
-                      style={{ color: "var(--accent)" }}
-                    >
-                      Open in Maps →
-                    </a>
-                  )}
-                </div>
-              </Row>
+              <Fact emoji="📍">
+                {party.location_name && <span className="font-semibold">{party.location_name}</span>}
+                {party.location_name && party.location_address && <br />}
+                {party.location_address && <span className="pp-muted">{party.location_address}</span>}
+                {mapHref && (
+                  <a
+                    href={mapHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 font-semibold underline-offset-4 hover:underline"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    Map →
+                  </a>
+                )}
+              </Fact>
             )}
             {party.rsvp_deadline && (
-              <Row label="RSVP by">{formatPartyDateLong(party.rsvp_deadline)}</Row>
+              <Fact emoji="⏰">RSVP by <span className="font-semibold">{formatPartyDate(party.rsvp_deadline)}</span></Fact>
             )}
-            {party.gift_note && <Row label="Gifts">{party.gift_note}</Row>}
-            {party.food_note && <Row label="Food">{party.food_note}</Row>}
-            {party.rain_plan && <Row label="Rain plan">{party.rain_plan}</Row>}
+            {party.gift_note && <Fact emoji="🎁">{party.gift_note}</Fact>}
+            {party.food_note && <Fact emoji="🍕">{party.food_note}</Fact>}
+            {party.rain_plan && <Fact emoji="☔">{party.rain_plan}</Fact>}
             {party.host_name && (
-              <Row label="Hosted by">
+              <Fact emoji="💌">
                 {party.host_name}
                 {party.host_phone && (
                   <a
@@ -164,9 +125,9 @@ export function PublicPartyView({
                     {party.host_phone}
                   </a>
                 )}
-              </Row>
+              </Fact>
             )}
-          </dl>
+          </div>
           {mapEmbedSrc && (
             <div className="mt-5 overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5">
               <iframe
@@ -179,14 +140,34 @@ export function PublicPartyView({
               />
             </div>
           )}
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="mt-5 flex flex-wrap gap-2">
             <CalendarAddButton slug={slug} party={party} />
           </div>
         </section>
 
+        <section id="rsvp" className="pp-enter mt-6 pp-card px-6 py-7 sm:px-8 sm:py-8" style={{ animationDelay: "0.16s" }}>
+          <RsvpForm
+            slug={slug}
+            scriptUrl={scriptUrl}
+            isDemo={isDemo}
+            inviteToken={inviteToken}
+          />
+        </section>
+
+        {party.profile_image_url && (
+          <div className="pp-enter mt-6 flex items-center gap-5 pp-card px-6 py-5" style={{ animationDelay: "0.24s" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={party.profile_image_url}
+              alt={party.birthday_child_name}
+              className="h-20 w-20 rounded-full object-cover ring-4 ring-white shadow-md"
+            />
+            <div className="text-xl font-semibold">{party.birthday_child_name} 🎂</div>
+          </div>
+        )}
+
         <section className="pp-enter mt-8" style={{ animationDelay: "0.32s" }}>
-          <span className="pp-section-rule" />
-          <h2 className="mb-4 text-2xl font-bold tracking-tight">Birthday wishes</h2>
+          <h2 className="mb-3 text-xl font-bold tracking-tight">💌 Wishes</h2>
           <NoteWall scriptUrl={scriptUrl} isDemo={isDemo} notes={notes} />
         </section>
 
@@ -208,7 +189,7 @@ export function PublicPartyView({
         )}
 
         <footer className="mt-12 text-center text-xs pp-muted">
-          🔒 This page is unlisted. Only people with the link can see it.
+          🔒 Unlisted · link only
         </footer>
 
         <StickyRsvpBar visible={scrolled} />
@@ -217,11 +198,11 @@ export function PublicPartyView({
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Fact({ emoji, children }: { emoji: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[6.5rem,1fr] items-start gap-4">
-      <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] pp-muted">{label}</dt>
-      <dd>{children}</dd>
+    <div className="flex items-start gap-3">
+      <span aria-hidden className="text-xl leading-6">{emoji}</span>
+      <div className="min-w-0 leading-6">{children}</div>
     </div>
   );
 }
