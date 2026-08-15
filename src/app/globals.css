@@ -377,3 +377,53 @@ body {
   .pp-hype-tapcount { animation: none !important; }
   .pp-hype-emoji { opacity: 0.5; }
 }
+
+/* ========================================================================
+   Full-bleed banner hero + card entrance animations
+   ======================================================================== */
+
+.pp-banner {
+  position: relative;
+  overflow: hidden;
+  animation: pp-banner-in 0.8s ease both;
+}
+
+.pp-banner-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Keep the hero substantial on phones even for very wide banner art;
+     object-fit center-crops the sides, where banner art keeps its margins. */
+  min-height: 200px;
+  max-height: min(62vh, 560px);
+  object-fit: cover;
+  /* Slow ken-burns drift so the hero feels alive without distracting */
+  animation: pp-banner-zoom 18s ease-in-out infinite alternate;
+}
+
+/* Card entrance — NOT named pp-rise: that keyframe belongs to the
+   rising bubbles above. */
+.pp-enter {
+  animation: pp-enter 0.65s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes pp-banner-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pp-banner-zoom {
+  from { transform: scale(1); }
+  to   { transform: scale(1.07); }
+}
+
+@keyframes pp-enter {
+  from { opacity: 0; transform: translateY(22px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-banner,
+  .pp-banner-img,
+  .pp-enter { animation: none !important; }
+}

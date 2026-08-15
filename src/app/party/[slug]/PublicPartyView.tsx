@@ -42,45 +42,45 @@ export function PublicPartyView({
   const mapHref = party.map_url || googleMapsUrl(party.location_address, party.location_name);
   const mapEmbedSrc = googleMapsEmbedUrl(party.location_address, party.location_name);
   const hype = useHypeMode(party.date, party.start_time, party.end_time);
+  const heroSrc = bannerImage(party);
 
   return (
     <>
       <RisingBubbles />
       <IdleConfetti />
 
-      <main className="relative mx-auto max-w-2xl px-4 pt-8 pb-32 sm:px-6 sm:pt-10">
-        {/* HERO — within 48h of the party the invite art swaps for the
-            hype-mode countdown (see docs/hype-mode.md) */}
-        {hype ? (
-          <HypeCountdown
-            date={party.date}
-            startTime={party.start_time}
-            endTime={party.end_time}
-            childName={party.birthday_child_name}
-          />
-        ) : (
-          (() => {
-            const heroSrc = bannerImage(party);
-            return (
-              <div className="pp-card overflow-hidden">
-                {heroSrc && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={heroSrc}
-                    alt={party.party_title}
-                    className="block w-full h-auto"
-                  />
-                )}
-                <div className="px-6 pb-6 pt-5 sm:px-8 sm:pb-7">
-                  <Countdown date={party.date} startTime={party.start_time} />
-                </div>
-              </div>
-            );
-          })()
-        )}
+      {/* Full-bleed banner hero with a slow ken-burns drift */}
+      {heroSrc && (
+        <div className="pp-banner">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={heroSrc} alt={party.party_title} className="pp-banner-img" />
+        </div>
+      )}
+
+      <main
+        className={`relative z-10 mx-auto max-w-2xl px-4 pb-32 sm:px-6 ${
+          heroSrc ? "-mt-4 sm:-mt-8" : "pt-8 sm:pt-10"
+        }`}
+      >
+        {/* Within 48h of the party the countdown swaps for the hype-mode
+            takeover (see docs/hype-mode.md) */}
+        <div className="pp-enter">
+          {hype ? (
+            <HypeCountdown
+              date={party.date}
+              startTime={party.start_time}
+              endTime={party.end_time}
+              childName={party.birthday_child_name}
+            />
+          ) : (
+            <div className="pp-card px-6 py-5 sm:px-8">
+              <Countdown date={party.date} startTime={party.start_time} />
+            </div>
+          )}
+        </div>
 
         {/* RSVP — leads with the description, then the form */}
-        <section id="rsvp" className="mt-8 pp-card px-6 py-7 sm:px-8 sm:py-8">
+        <section id="rsvp" className="pp-enter mt-8 pp-card px-6 py-7 sm:px-8 sm:py-8" style={{ animationDelay: "0.08s" }}>
           {party.description && (
             <p className="mb-6 whitespace-pre-wrap text-[1.0625rem] leading-relaxed pp-muted">
               {party.description}
@@ -102,7 +102,7 @@ export function PublicPartyView({
         </section>
 
         {party.profile_image_url && (
-          <div className="mt-6 flex items-center gap-5 pp-card px-6 py-5">
+          <div className="pp-enter mt-6 flex items-center gap-5 pp-card px-6 py-5" style={{ animationDelay: "0.16s" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={party.profile_image_url}
@@ -116,7 +116,7 @@ export function PublicPartyView({
           </div>
         )}
 
-        <section className="mt-6 pp-card px-6 py-6 sm:px-8 sm:py-7">
+        <section className="pp-enter mt-6 pp-card px-6 py-6 sm:px-8 sm:py-7" style={{ animationDelay: "0.24s" }}>
           <span className="pp-section-rule" />
           <h2 className="text-2xl font-bold tracking-tight">Party details</h2>
           <dl className="mt-5 grid gap-4 text-[0.95rem]">
@@ -184,7 +184,7 @@ export function PublicPartyView({
           </div>
         </section>
 
-        <section className="mt-8">
+        <section className="pp-enter mt-8" style={{ animationDelay: "0.32s" }}>
           <span className="pp-section-rule" />
           <h2 className="mb-4 text-2xl font-bold tracking-tight">Birthday wishes</h2>
           <NoteWall scriptUrl={scriptUrl} isDemo={isDemo} notes={notes} />
