@@ -9,6 +9,7 @@ import { NoteWall } from "./NoteWall";
 import { CalendarAddButton } from "./CalendarAddButton";
 import { StickyRsvpBar } from "./StickyRsvpBar";
 import { Countdown } from "./Countdown";
+import { HypeCountdown, useHypeMode } from "./HypeCountdown";
 import { IdleConfetti } from "./IdleConfetti";
 import { RisingBubbles } from "./RisingBubbles";
 
@@ -40,6 +41,7 @@ export function PublicPartyView({
   const timeStr = formatTimeRange(party.start_time, party.end_time);
   const mapHref = party.map_url || googleMapsUrl(party.location_address, party.location_name);
   const mapEmbedSrc = googleMapsEmbedUrl(party.location_address, party.location_name);
+  const hype = useHypeMode(party.date, party.start_time, party.end_time);
 
   return (
     <>
@@ -47,25 +49,35 @@ export function PublicPartyView({
       <IdleConfetti />
 
       <main className="relative mx-auto max-w-2xl px-4 pt-8 pb-32 sm:px-6 sm:pt-10">
-        {/* HERO — invite art at full natural aspect, framed by a soft card */}
-        {(() => {
-          const heroSrc = bannerImage(party);
-          return (
-            <div className="pp-card overflow-hidden">
-              {heroSrc && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={heroSrc}
-                  alt={party.party_title}
-                  className="block w-full h-auto"
-                />
-              )}
-              <div className="px-6 pb-6 pt-5 sm:px-8 sm:pb-7">
-                <Countdown date={party.date} startTime={party.start_time} />
+        {/* HERO — within 48h of the party the invite art swaps for the
+            hype-mode countdown (see docs/hype-mode.md) */}
+        {hype ? (
+          <HypeCountdown
+            date={party.date}
+            startTime={party.start_time}
+            endTime={party.end_time}
+            childName={party.birthday_child_name}
+          />
+        ) : (
+          (() => {
+            const heroSrc = bannerImage(party);
+            return (
+              <div className="pp-card overflow-hidden">
+                {heroSrc && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={heroSrc}
+                    alt={party.party_title}
+                    className="block w-full h-auto"
+                  />
+                )}
+                <div className="px-6 pb-6 pt-5 sm:px-8 sm:pb-7">
+                  <Countdown date={party.date} startTime={party.start_time} />
+                </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()
+        )}
 
         {/* RSVP — leads with the description, then the form */}
         <section id="rsvp" className="mt-8 pp-card px-6 py-7 sm:px-8 sm:py-8">

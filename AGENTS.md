@@ -85,6 +85,7 @@ src/
 │       ├── NoteWall.tsx          # Birthday-wish wall + submit form
 │       ├── CalendarAddButton.tsx # gcal URL + .ics download
 │       ├── Countdown.tsx         # Live d/h/m/s ticker
+│       ├── HypeCountdown.tsx     # 48h-out hero takeover (docs/hype-mode.md)
 │       ├── RisingBubbles.tsx     # Ambient bubble particles
 │       ├── IdleConfetti.tsx      # Periodic confetti puffer
 │       ├── StickyRsvpBar.tsx     # Mobile-only bottom CTA

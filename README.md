@@ -101,6 +101,10 @@ If you'd rather click buttons than edit a spreadsheet, you can deploy a one-page
 
 Setup walkthrough: [`apps-script/SETUP.md#optional-admin-dashboard`](apps-script/SETUP.md). Skip this if your Sheet workflow is enough.
 
+## Hype mode
+
+When the party is **less than 48 hours away**, the party page automatically switches into hype mode: a giant live countdown in the party's theme colors, floating emoji, and tap-anywhere confetti. When the countdown hits zero it flips to "IT'S PARTY TIME!" with a confetti volley, then quietly returns to normal after the party. Nothing to configure — preview it any time with `?hype=1` on your party URL. Details + roadmap ideas: [`docs/hype-mode.md`](docs/hype-mode.md).
+
 ## Make it yours
 
 Ask your AI to swap the banner, change colors, tweak wording, add a section. [`AGENTS.md`](AGENTS.md) tells the AI the rules of the road for this codebase so suggestions stay aligned with the design (no auth, no admin, no Postgres — just one Sheet per party).
