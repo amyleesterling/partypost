@@ -4,7 +4,7 @@
 
 import type { PartyData } from "./sheets";
 
-/** Portrait invitation: envelope card + thanks page. */
+/** Portrait invitation: thanks page + banner fallback. */
 export function inviteImage(party: PartyData): string | null {
   return party.invite_image_url || party.hero_image_url || null;
 }

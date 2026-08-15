@@ -22,8 +22,7 @@ export interface PartyData {
   food_note: string | null;
   rain_plan: string | null;
   theme: ThemeKey | string;
-  /** The portrait/square invitation image — shown inside the envelope and
-      on the thanks page. */
+  /** The portrait/square invitation image — shown on the thanks page. */
   invite_image_url?: string | null;
   /** Legacy alias for invite_image_url (older sheets used "hero_image_url").
       Code reads invite_image_url first, then falls back to hero_image_url. */
