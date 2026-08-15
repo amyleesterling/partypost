@@ -85,6 +85,7 @@ src/
 │       ├── NoteWall.tsx          # Birthday-wish wall + submit form
 │       ├── CalendarAddButton.tsx # gcal URL + .ics download
 │       ├── Countdown.tsx         # Live d/h/m/s ticker
+│       ├── HypeCountdown.tsx     # 48h-out hero takeover (docs/hype-mode.md)
 │       ├── RisingBubbles.tsx     # Ambient bubble particles
 │       ├── IdleConfetti.tsx      # Periodic confetti puffer
 │       ├── StickyRsvpBar.tsx     # Mobile-only bottom CTA
@@ -96,14 +97,14 @@ src/
 
 ## Banner + invite art — prompt the user, but DON'T halt
 
-The party page has two image slots: a **landscape banner** (hero on the public page) and a **portrait invite** (the card that floats out of the envelope). These need to look polished and on-theme — they're the most visible part of the page.
+The party page has two image slots: a **landscape banner** (hero on the public page) and a **portrait invite** (shown on the RSVP thanks page). These need to look polished and on-theme — they're the most visible part of the page.
 
 **Do not auto-generate SVG, ASCII, emoji-collage, or other placeholder art.** A hand-rolled SVG of balloons looks like a hand-rolled SVG of balloons. The whole point of the README's Step 2 is that any consumer image generator (ChatGPT/DALL·E, Gemini, Midjourney, etc.) produces beautiful kid-party art in seconds, and the user can iterate until they love it.
 
 The right pattern is **prompt-and-continue**, not halt-and-wait:
 
 1. When you reach the banner/invite step, **prompt the user inline**: paste the image-generation prompt from the README's "Step 2 — Generate a banner image" section, filled in with their party's specifics (child's name, age, date, location, theme, favorite colors). Tell them to drop the resulting image(s) into `public/<slug>-banner.png` and `public/<slug>-invite.png` whenever they're ready.
-2. **Don't block on it.** Keep going — finish the Sheet/Apps Script setup, register the party in `parties.ts`, push, deploy. The site can ship with empty image fields; it degrades gracefully (theme-color background, monogrammed envelope still works).
+2. **Don't block on it.** Keep going — finish the Sheet/Apps Script setup, register the party in `parties.ts`, push, deploy. The site can ship with empty image fields; it degrades gracefully (theme-color background).
 3. When the user comes back with their image, wire it up: either commit the file to `public/` and reference `/<slug>-banner.png` in the Settings tab's `banner_image_url` / `invite_image_url`, or paste a hosted URL directly into Settings. The image takes effect on the next deploy (or within ~60s of editing the Sheet).
 
 The goal: the user starts generating art in a separate tab while you're getting the rest of the party live. By the time the site deploys, they have art ready to paste in.

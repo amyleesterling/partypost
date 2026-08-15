@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import type { PartyData, PublicNote } from "@/lib/sheets";
-import { bannerImage, inviteImage } from "@/lib/partyImages";
-import { formatPartyDateLong, formatTimeRange, googleMapsUrl } from "@/lib/format";
+import { bannerImage } from "@/lib/partyImages";
+import { formatPartyDateLong, formatTimeRange, googleMapsEmbedUrl, googleMapsUrl } from "@/lib/format";
 import { RsvpForm } from "./RsvpForm";
 import { NoteWall } from "./NoteWall";
 import { CalendarAddButton } from "./CalendarAddButton";
 import { StickyRsvpBar } from "./StickyRsvpBar";
 import { Countdown } from "./Countdown";
+import { HypeCountdown, useHypeMode } from "./HypeCountdown";
 import { IdleConfetti } from "./IdleConfetti";
 import { RisingBubbles } from "./RisingBubbles";
-import { EnvelopeIntro } from "./EnvelopeIntro";
 
 export function PublicPartyView({
   slug,
@@ -40,39 +40,44 @@ export function PublicPartyView({
   const dateStr = formatPartyDateLong(party.date);
   const timeStr = formatTimeRange(party.start_time, party.end_time);
   const mapHref = party.map_url || googleMapsUrl(party.location_address, party.location_name);
+  const mapEmbedSrc = googleMapsEmbedUrl(party.location_address, party.location_name);
+  const hype = useHypeMode(party.date, party.start_time, party.end_time);
 
   return (
     <>
       <RisingBubbles />
       <IdleConfetti />
-      <EnvelopeIntro
-        partyTitle={party.party_title}
-        birthdayChildName={party.birthday_child_name}
-        hostName={party.host_name}
-        date={party.date}
-        inviteImageUrl={inviteImage(party)}
-      />
 
       <main className="relative mx-auto max-w-2xl px-4 pt-8 pb-32 sm:px-6 sm:pt-10">
-        {/* HERO — invite art at full natural aspect, framed by a soft card */}
-        {(() => {
-          const heroSrc = bannerImage(party);
-          return (
-            <div className="pp-card overflow-hidden">
-              {heroSrc && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={heroSrc}
-                  alt={party.party_title}
-                  className="block w-full h-auto"
-                />
-              )}
-              <div className="px-6 pb-6 pt-5 sm:px-8 sm:pb-7">
-                <Countdown date={party.date} startTime={party.start_time} />
+        {/* HERO — within 48h of the party the invite art swaps for the
+            hype-mode countdown (see docs/hype-mode.md) */}
+        {hype ? (
+          <HypeCountdown
+            date={party.date}
+            startTime={party.start_time}
+            endTime={party.end_time}
+            childName={party.birthday_child_name}
+          />
+        ) : (
+          (() => {
+            const heroSrc = bannerImage(party);
+            return (
+              <div className="pp-card overflow-hidden">
+                {heroSrc && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={heroSrc}
+                    alt={party.party_title}
+                    className="block w-full h-auto"
+                  />
+                )}
+                <div className="px-6 pb-6 pt-5 sm:px-8 sm:pb-7">
+                  <Countdown date={party.date} startTime={party.start_time} />
+                </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()
+        )}
 
         {/* RSVP — leads with the description, then the form */}
         <section id="rsvp" className="mt-8 pp-card px-6 py-7 sm:px-8 sm:py-8">
@@ -162,6 +167,18 @@ export function PublicPartyView({
               </Row>
             )}
           </dl>
+          {mapEmbedSrc && (
+            <div className="mt-5 overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5">
+              <iframe
+                src={mapEmbedSrc}
+                title={`Map to ${party.location_name || party.location_address}`}
+                className="block h-64 w-full border-0 sm:h-72"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            </div>
+          )}
           <div className="mt-6 flex flex-wrap gap-2">
             <CalendarAddButton slug={slug} party={party} />
           </div>

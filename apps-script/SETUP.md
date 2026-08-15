@@ -64,7 +64,7 @@ Commit + push. Vercel auto-deploys in ~30s. Done.
 
 Just edit the Settings tab in the Sheet. Changes show up on the public page within ~1 minute (Next.js ISR cache).
 
-If you change the **Apps Script code** (e.g. you pulled a new version of `Code.gs` from this repo): **Deploy → Manage deployments → ✏️ pencil → Version: New version → Deploy**. The Web app URL stays the same. If you create a *new deployment* instead, the URL changes and you'll need to update `parties.ts`.
+If you change the **Apps Script code** (e.g. you pulled a new version of `Code.gs` or `admin.html` from this repo): **Deploy → Manage deployments → ✏️ pencil → Version: New version → Deploy**. The Web app URL stays the same. If you create a *new deployment* instead, the URL changes and you'll need to update `parties.ts`.
 
 ## Where the data lives
 

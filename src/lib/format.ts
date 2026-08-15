@@ -45,3 +45,10 @@ export function googleMapsUrl(address: string | null | undefined, name?: string 
   if (!q) return null;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }
+
+// Keyless Google Maps embed — no API key needed for the output=embed iframe.
+export function googleMapsEmbedUrl(address: string | null | undefined, name?: string | null): string | null {
+  const q = (address || name || "").trim();
+  if (!q) return null;
+  return `https://maps.google.com/maps?q=${encodeURIComponent(q)}&z=15&output=embed`;
+}

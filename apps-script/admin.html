@@ -3,7 +3,8 @@
 <head>
   <base target="_top">
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f8fb">
   <title>PartyPost Admin</title>
   <style>
     :root {
@@ -16,67 +17,249 @@
       --border: #e0e7ee;
       --ok: #2c8a48;
       --warn: #b8730b;
+      --no: #a3373a;
+      --tabbar-h: 64px;
     }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { height: 100%; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--ink);
       margin: 0;
-      padding: 24px 16px 80px;
-      font-size: 15px;
+      font-size: 16px;
       line-height: 1.5;
+      min-height: 100%;
+      padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px);
     }
-    .wrap { max-width: 880px; margin: 0 auto; }
-    header { margin-bottom: 24px; }
-    header h1 {
-      margin: 0 0 4px;
-      font-size: 28px;
-      letter-spacing: -0.01em;
-    }
-    header p { margin: 0; color: var(--muted); font-size: 14px; }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 0 14px; }
 
+    /* ---- Top bar ---- */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(245,248,251,0.92);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding-top: env(safe-area-inset-top);
+    }
+    .topbar-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .topbar h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .topbar .sub { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
+    .refresh-btn {
+      flex: none;
+      width: 44px; height: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .refresh-btn.spinning { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- Views / tabs ---- */
+    .view { display: none; padding-top: 16px; }
+    .view.active { display: block; }
+
+    .tabbar {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 30;
+      background: rgba(255,255,255,0.94);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .tabbar-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      height: var(--tabbar-h);
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      position: relative;
+    }
+    .tab-btn .icon { font-size: 22px; line-height: 1; }
+    .tab-btn.active { color: var(--accent); }
+    .tab-btn .badge {
+      position: absolute;
+      top: 8px;
+      left: calc(50% + 6px);
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: #e5484d;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ---- Cards ---- */
     .card {
       background: var(--card);
       border-radius: 16px;
       box-shadow: 0 1px 2px rgba(20,30,60,0.04), 0 6px 18px rgba(20,30,60,0.06);
-      padding: 18px 20px;
-      margin-bottom: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
     }
-    .card h2 {
-      margin: 0 0 6px;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: -0.005em;
-    }
-    .card .muted {
-      font-size: 13px;
-      color: var(--muted);
-      margin: 0 0 14px;
-    }
+    .card h2 { margin: 0 0 4px; font-size: 16px; font-weight: 700; }
+    .card .muted { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
 
+    /* ---- Home: stats ---- */
+    .hero-stat {
+      text-align: center;
+      padding: 20px 16px;
+    }
+    .hero-stat .big { font-size: 44px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+    .hero-stat .label { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .hero-stat .split { font-size: 13px; color: var(--muted); margin-top: 8px; }
     .summary {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
     }
     .stat {
       background: #f4f8fb;
       border-radius: 12px;
-      padding: 10px 14px;
+      padding: 10px 12px;
+      text-align: center;
     }
-    .stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+    .stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
     .stat .value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+    .stat .value.yes { color: var(--ok); }
+    .stat .value.no { color: var(--no); }
 
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-    th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
-    td .pill {
-      display: inline-block;
-      padding: 2px 8px;
+    .progress-track {
+      height: 8px;
+      background: #e8eef5;
       border-radius: 999px;
-      font-size: 11px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.4s ease; }
+    .progress-label { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+    /* ---- Buttons ---- */
+    button { cursor: pointer; border: none; font-family: inherit; font-weight: 600; }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 16px;
+      box-shadow: 0 6px 16px -6px rgba(47,128,237,0.6);
+    }
+    .btn-primary:active { background: var(--accent-dark); }
+    .btn-primary:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+    .btn-send { background: var(--ok); box-shadow: 0 6px 16px -6px rgba(44,138,72,0.6); }
+    .btn-ghost {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--ink);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      min-height: 44px;
+    }
+    .btn-ghost:active { background: #eef3f8; }
+    .action-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .action-row .btn-ghost { flex: 1; }
+
+    /* ---- Filter chips ---- */
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 14px 12px;
+      margin: 0 -14px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+      flex: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 14px;
       font-weight: 600;
+      color: var(--muted);
+      min-height: 40px;
+    }
+    .chip .count { font-weight: 700; margin-left: 4px; }
+    .chip.active { background: var(--ink); border-color: var(--ink); color: white; }
+
+    /* ---- List cards ---- */
+    .list { display: flex; flex-direction: column; gap: 10px; }
+    .item {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 1px 2px rgba(20,30,60,0.04), 0 4px 12px rgba(20,30,60,0.05);
+      padding: 12px 14px;
+    }
+    .item-top { display: flex; align-items: center; gap: 8px; }
+    .item-name { font-weight: 700; font-size: 15px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item-sub { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+    .item-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .item-note {
+      font-size: 14px;
+      background: #f7f9fc;
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-top: 8px;
+      overflow-wrap: anywhere;
+    }
+    .item-note .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; display: block; }
+    .item-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .item-actions .btn-ghost { flex: 1; text-align: center; }
+
+    .pill {
+      flex: none;
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
     }
     .pill-pending { background: #f4f0e2; color: var(--warn); }
     .pill-sent    { background: #e7eef9; color: var(--accent); }
@@ -84,84 +267,49 @@
     .pill-clicked { background: #d0e1f5; color: #1956b8; }
     .pill-rsvp    { background: #d6efe0; color: var(--ok); }
     .pill-yes     { background: #d6efe0; color: var(--ok); }
-    .pill-no      { background: #efdedb; color: #a3373a; }
+    .pill-no      { background: #efdedb; color: var(--no); }
+    .counts-inline { flex: none; font-size: 13px; color: var(--muted); font-weight: 600; }
 
+    /* ---- Forms ---- */
     textarea, input[type="text"], input[type="email"] {
       width: 100%;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 14px;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 16px;
       font-family: inherit;
+      background: white;
+      color: var(--ink);
     }
     textarea { resize: vertical; }
     textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    label.field { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 4px; }
+    .form-stack > * + * { margin-top: 10px; }
 
-    button {
+    details.bulk summary {
       cursor: pointer;
-      border: none;
-      font-family: inherit;
+      font-size: 14px;
       font-weight: 600;
-    }
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-      padding: 10px 18px;
-      border-radius: 9999px;
-      font-size: 14px;
-      box-shadow: 0 6px 16px -6px rgba(47,128,237,0.6);
-    }
-    .btn-primary:hover { background: var(--accent-dark); }
-    .btn-primary:disabled { opacity: 0.55; cursor: default; }
-    .btn-link {
-      background: none;
       color: var(--accent);
-      font-size: 13px;
-      padding: 4px 0;
-      text-decoration: underline;
-      text-underline-offset: 3px;
+      padding: 6px 0;
+      list-style: none;
     }
+    details.bulk summary::-webkit-details-marker { display: none; }
+    details.bulk summary::before { content: '▸ '; }
+    details.bulk[open] summary::before { content: '▾ '; }
+    details.bulk .form-stack { margin-top: 8px; }
 
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 24px;
-      transform: translateX(-50%);
-      background: var(--ink);
-      color: white;
-      padding: 10px 18px;
-      border-radius: 9999px;
-      font-size: 14px;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
-      opacity: 0;
-      transition: opacity 0.2s ease;
-      z-index: 100;
-    }
-    .toast.show { opacity: 1; }
-
-    .row-actions { display: flex; gap: 6px; }
-    .small { font-size: 12px; color: var(--muted); }
-    .empty { color: var(--muted); font-style: italic; padding: 16px; text-align: center; }
-    .loading { color: var(--muted); padding: 24px; text-align: center; }
-
-    /* Handy links — surfaced at the top so the admin doesn't have to
-       hunt for the auto-generated script.google.com URL. */
+    /* ---- Links ---- */
     .links-list { display: flex; flex-direction: column; gap: 10px; }
-    .link-row {
-      display: grid;
-      grid-template-columns: 86px 1fr auto auto;
-      gap: 10px;
-      align-items: center;
-      background: #f4f8fb;
-      border-radius: 12px;
-      padding: 8px 12px;
-    }
+    .link-row { background: #f4f8fb; border-radius: 12px; padding: 10px 12px; }
     .link-row .label {
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       color: var(--muted);
       font-weight: 700;
+      display: block;
+      margin-bottom: 2px;
     }
     .link-row a {
       color: var(--accent);
@@ -170,115 +318,171 @@
       word-break: break-all;
       overflow-wrap: anywhere;
       line-height: 1.35;
+      display: block;
     }
-    .link-row a:hover { text-decoration: underline; }
+    .link-row .link-actions { display: flex; gap: 8px; margin-top: 8px; }
     .link-row .icon-btn {
+      flex: 1;
       background: white;
       border: 1px solid var(--border);
       border-radius: 999px;
-      padding: 5px 12px;
-      font-size: 12px;
+      padding: 8px 12px;
+      font-size: 13px;
       color: var(--ink);
-      transition: background 0.15s ease;
+      min-height: 40px;
     }
-    .link-row .icon-btn:hover { background: #eef3f8; }
-    @media (max-width: 560px) {
-      .link-row {
-        grid-template-columns: 1fr 1fr;
-        grid-template-areas: 'label label' 'url url' 'copy open';
-      }
-      .link-row .label { grid-area: label; }
-      .link-row a { grid-area: url; }
-      .link-row .copy-btn { grid-area: copy; }
-      .link-row .open-btn { grid-area: open; }
+    .link-row .icon-btn:active { background: #eef3f8; }
+
+    .empty { color: var(--muted); padding: 28px 16px; text-align: center; }
+    .empty .emoji { font-size: 32px; display: block; margin-bottom: 6px; }
+    .loading { color: var(--muted); padding: 40px 16px; text-align: center; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px);
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 9999px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 100;
+      max-width: calc(100vw - 32px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+    .toast.show { opacity: 1; }
   </style>
 </head>
 <body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <h1>🎉 <span id="party-title">PartyPost admin</span><span class="sub" id="party-sub">Loading…</span></h1>
+      <button class="refresh-btn" id="btn-refresh" onclick="load()" aria-label="Refresh">↻</button>
+    </div>
+  </div>
+
   <div class="wrap">
-    <header>
-      <h1>🎉 PartyPost admin</h1>
-      <p id="party-summary" class="muted">Loading…</p>
-    </header>
+    <div id="loading" class="loading">Loading your party…</div>
 
-    <section id="links-card" class="card" hidden>
-      <h2>Handy links</h2>
-      <p class="muted">Bookmark these — the admin URL is auto-generated and easy to lose.</p>
-      <div class="links-list" id="links-list"></div>
-    </section>
-
-    <section id="dashboard" class="card" hidden>
-      <h2>Overview</h2>
-      <div class="summary" id="stats"></div>
-    </section>
-
-    <section class="card">
-      <h2>Add an invitee</h2>
-      <p class="muted">Quick add, one at a time. Duplicates are skipped automatically.</p>
-      <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:8px; align-items:end;">
-        <div>
-          <label class="small" style="display:block; margin-bottom:4px;">Name</label>
-          <input id="single-name" type="text" placeholder="Jane Smith" />
+    <!-- HOME -->
+    <section class="view" id="view-home">
+      <div class="card hero-stat">
+        <div class="big" id="stat-going">0</div>
+        <div class="label">people coming</div>
+        <div class="split" id="stat-split"></div>
+      </div>
+      <div class="card">
+        <div class="summary" id="stats"></div>
+        <div id="progress-wrap" hidden>
+          <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+          <div class="progress-label" id="progress-label"></div>
         </div>
-        <div>
-          <label class="small" style="display:block; margin-bottom:4px;">Email</label>
-          <input id="single-email" type="email" placeholder="jane@example.com" />
-        </div>
-        <button class="btn-primary" id="btn-add-single" onclick="addSingle()">Add</button>
+      </div>
+      <div class="card" id="home-send-card" hidden>
+        <button class="btn-primary btn-send" id="btn-send-home" onclick="sendPending()"></button>
+      </div>
+      <div class="card" id="links-card" hidden>
+        <h2>Handy links</h2>
+        <p class="muted">Bookmark these — the admin URL is auto-generated and easy to lose.</p>
+        <div class="links-list" id="links-list"></div>
       </div>
     </section>
 
-    <section class="card">
-      <h2>Bulk add</h2>
-      <p class="muted">
-        Paste names + emails — one per line.<br>
-        <code>Jane Smith jane@example.com</code> &nbsp;or&nbsp; <code>jane@example.com</code>
-      </p>
-      <textarea id="invitee-input" rows="5" placeholder="Jane Smith jane@example.com&#10;john@example.com"></textarea>
-      <div style="margin-top:10px;">
-        <button class="btn-primary" id="btn-add" onclick="addInvitees()">Add to list</button>
+    <!-- GUESTS -->
+    <section class="view" id="view-guests">
+      <div class="card">
+        <h2>Add a guest</h2>
+        <div class="form-stack">
+          <div>
+            <label class="field" for="single-name">Name</label>
+            <input id="single-name" type="text" placeholder="Jane Smith" autocomplete="off" autocapitalize="words" />
+          </div>
+          <div>
+            <label class="field" for="single-email">Email</label>
+            <input id="single-email" type="email" placeholder="jane@example.com" autocomplete="off" autocapitalize="off" />
+          </div>
+          <button class="btn-primary" id="btn-add-single" onclick="addSingle()">Add to guest list</button>
+        </div>
+        <details class="bulk" style="margin-top:10px;">
+          <summary>Bulk add (paste a list)</summary>
+          <div class="form-stack">
+            <p class="muted" style="margin:0;">One per line: <code>Jane Smith jane@example.com</code> or just <code>jane@example.com</code>. Commas between emails work too.</p>
+            <textarea id="invitee-input" rows="5" placeholder="Jane Smith jane@example.com&#10;john@example.com"></textarea>
+            <button class="btn-primary" id="btn-add" onclick="addInvitees()">Add all</button>
+          </div>
+        </details>
       </div>
+
+      <div class="card" id="guests-send-card" hidden>
+        <button class="btn-primary btn-send" id="btn-send" onclick="sendPending()"></button>
+        <p class="muted" style="margin:8px 0 0;">Emails everyone marked Pending. Already-sent guests are skipped.</p>
+      </div>
+
+      <div class="chips" id="guest-chips"></div>
+      <div class="action-row" style="margin-bottom:12px;" id="guest-actions" hidden>
+        <button class="btn-ghost" onclick="copyGuestEmails()">📋 Copy emails (for Gmail)</button>
+      </div>
+      <div class="list" id="guest-list"></div>
     </section>
 
-    <section class="card">
-      <h2>Send invitations</h2>
-      <p class="muted">
-        Sends an email to everyone in the Invitees list whose status is
-        <strong>Pending</strong> (not yet sent). Already-sent people are skipped.
-      </p>
-      <button class="btn-primary" id="btn-send" onclick="sendPending()" style="background:#2c8a48;box-shadow:0 6px 16px -6px rgba(44,138,72,0.6);">📨 Send to pending</button>
+    <!-- RSVPS -->
+    <section class="view" id="view-rsvps">
+      <div class="chips" id="rsvp-chips"></div>
+      <div class="action-row" style="margin-bottom:12px;" id="rsvp-actions" hidden>
+        <button class="btn-ghost" onclick="copyRsvpEmails()">📋 Copy emails (for Gmail)</button>
+      </div>
+      <div class="list" id="rsvp-list"></div>
     </section>
 
-    <section class="card" id="invitations-card">
-      <h2>Invitees</h2>
-      <p class="muted" id="invitations-empty" hidden>No invitations yet. Paste some above and click "Add to list".</p>
-      <div id="invitations-table-wrap"></div>
-    </section>
-
-    <section class="card" id="rsvps-card">
-      <h2>RSVPs</h2>
-      <div id="rsvps-table-wrap"></div>
-    </section>
-
-    <section class="card" id="notes-card">
-      <h2>Birthday wishes</h2>
-      <p class="muted">New wishes show as "Pending" until you approve them. Only approved wishes appear on the public party page.</p>
-      <div id="notes-table-wrap"></div>
+    <!-- WISHES -->
+    <section class="view" id="view-wishes">
+      <p class="muted" style="margin:0 2px 12px;">Approved wishes appear on the public party page. Hide anything that shouldn't be there.</p>
+      <div class="list" id="wish-list"></div>
     </section>
   </div>
+
+  <nav class="tabbar">
+    <div class="tabbar-inner">
+      <button class="tab-btn active" data-view="home" onclick="showView('home')"><span class="icon">🏠</span>Home</button>
+      <button class="tab-btn" data-view="guests" onclick="showView('guests')"><span class="icon">📨</span>Guests<span class="badge" id="badge-guests" hidden></span></button>
+      <button class="tab-btn" data-view="rsvps" onclick="showView('rsvps')"><span class="icon">✅</span>RSVPs</button>
+      <button class="tab-btn" data-view="wishes" onclick="showView('wishes')"><span class="icon">💌</span>Wishes</button>
+    </div>
+  </nav>
 
   <div id="toast" class="toast"></div>
 
   <script>
+    var state = null;
+    var guestFilter = 'all';
+    var rsvpFilter = 'all';
+
     function $(id) { return document.getElementById(id); }
+
+    var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    function fmtPartyDate(s) {
+      var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return String(s || '');
+      var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return DAYS[d.getDay()] + ', ' + MONTHS[d.getMonth()] + ' ' + d.getDate();
+    }
     function fmtDate(s) {
       if (!s) return '';
-      try {
-        var d = new Date(s);
-        if (isNaN(d.getTime())) return s;
-        var pad = function (n) { return n < 10 ? '0' + n : n; };
-        return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-      } catch (_e) { return s; }
+      var d = new Date(s);
+      if (isNaN(d.getTime())) return String(s);
+      var h = d.getHours();
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      var m = d.getMinutes();
+      return MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + h + ':' + (m < 10 ? '0' + m : m) + ' ' + ampm;
     }
     function escapeHtml(s) {
       return String(s == null ? '' : s)
@@ -297,9 +501,27 @@
       toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2400);
     }
     function setBusy(busy) {
-      ['btn-add','btn-send','btn-add-single'].forEach(function (id) {
+      ['btn-add', 'btn-send', 'btn-send-home', 'btn-add-single'].forEach(function (id) {
         var b = $(id); if (b) b.disabled = busy;
       });
+      $('btn-refresh').classList.toggle('spinning', busy);
+    }
+
+    function showView(name) {
+      document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
+      document.querySelectorAll('.tab-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-view') === name);
+      });
+      $('view-' + name).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    function guestStatus(r) {
+      if (r.rsvp_id)    return { key: 'rsvpd',   label: 'RSVPd',   cls: 'pill-rsvp' };
+      if (r.clicked_at) return { key: 'clicked', label: 'Clicked', cls: 'pill-clicked' };
+      if (r.opened_at)  return { key: 'opened',  label: 'Opened',  cls: 'pill-opened' };
+      if (r.sent_at)    return { key: 'sent',    label: 'Sent',    cls: 'pill-sent' };
+      return { key: 'pending', label: 'Pending', cls: 'pill-pending' };
     }
 
     function addResultMessage(res) {
@@ -311,176 +533,210 @@
     }
 
     function load() {
-      $('party-summary').textContent = 'Loading…';
+      setBusy(true);
       google.script.run
-        .withSuccessHandler(render)
+        .withSuccessHandler(function (d) { setBusy(false); state = d; renderAll(); })
         .withFailureHandler(function (err) {
-          $('party-summary').textContent = 'Error: ' + (err && err.message);
+          setBusy(false);
+          $('loading').textContent = 'Error: ' + (err && err.message);
         })
         .adminGetDashboard();
     }
 
-    function render(d) {
-      // Header
-      var subtitle = [d.party.title, d.party.date].filter(Boolean).join(' · ');
-      $('party-summary').textContent = subtitle || 'Party';
+    function renderAll() {
+      var d = state;
+      $('loading').hidden = true;
+      if (!document.querySelector('.view.active')) showView('home');
 
-      // Handy links (party invite URL + this admin URL)
-      renderLinks(d.links || {});
+      $('party-title').textContent = d.party.title || 'PartyPost admin';
+      $('party-sub').textContent = fmtPartyDate(d.party.date);
 
-      // Stats
-      $('dashboard').hidden = false;
+      renderHome();
+      renderGuests();
+      renderRsvps();
+      renderWishes();
+      renderBadges();
+    }
+
+    function renderHome() {
+      var d = state;
+      $('stat-going').textContent = d.rsvps.kids + d.rsvps.adults;
+      $('stat-split').textContent = d.rsvps.kids + ' kids · ' + d.rsvps.adults + ' adults';
+
       $('stats').innerHTML = [
-        statCard('Yes', d.rsvps.yes),
-        statCard('No', d.rsvps.no),
-        statCard('Kids going', d.rsvps.kids),
-        statCard('Adults going', d.rsvps.adults),
-        statCard('Total going', d.rsvps.kids + d.rsvps.adults),
-        statCard('Invitations', d.invitations.length),
+        statCard('Yes', d.rsvps.yes, 'yes'),
+        statCard('No', d.rsvps.no, 'no'),
+        statCard('Invited', d.invitations.length, ''),
       ].join('');
 
-      // Invitations
-      if (!d.invitations.length) {
-        $('invitations-empty').hidden = false;
-        $('invitations-table-wrap').innerHTML = '';
+      var invited = d.invitations.length;
+      if (invited > 0) {
+        var replied = d.invitations.filter(function (r) { return r.rsvp_id; }).length;
+        $('progress-wrap').hidden = false;
+        $('progress-fill').style.width = Math.round(replied / invited * 100) + '%';
+        $('progress-label').textContent = replied + ' of ' + invited + ' invited guests have RSVPd';
       } else {
-        $('invitations-empty').hidden = true;
-        $('invitations-table-wrap').innerHTML = invitationsTable(d.invitations);
+        $('progress-wrap').hidden = true;
       }
 
-      // RSVPs
-      $('rsvps-table-wrap').innerHTML = d.rsvps.details.length
-        ? rsvpsTable(d.rsvps.details)
-        : '<p class="empty">No RSVPs yet. Share the party link!</p>';
+      var pending = pendingInvites().length;
+      $('home-send-card').hidden = pending === 0;
+      $('btn-send-home').textContent = '📨 Send ' + pending + ' pending invitation' + (pending === 1 ? '' : 's');
 
-      // Notes
-      $('notes-table-wrap').innerHTML = d.notes.length
-        ? notesTable(d.notes)
-        : '<p class="empty">No birthday wishes yet.</p>';
+      renderLinks(d.links || {});
     }
 
-    function statCard(label, value) {
-      return '<div class="stat"><div class="label">' + escapeHtml(label) + '</div><div class="value">' + escapeHtml(value) + '</div></div>';
+    function statCard(label, value, cls) {
+      return '<div class="stat"><div class="label">' + escapeHtml(label) + '</div><div class="value ' + cls + '">' + escapeHtml(value) + '</div></div>';
     }
+
+    function pendingInvites() {
+      return state.invitations.filter(function (r) { return guestStatus(r).key === 'pending'; });
+    }
+
+    function canShare() { return !!(navigator.share); }
 
     function renderLinks(links) {
       var rows = [];
-      if (links.partyUrl) {
-        rows.push(linkRow('Party invite', links.partyUrl));
-      }
-      if (links.adminUrl) {
-        rows.push(linkRow('Admin page', links.adminUrl));
-      }
-      if (!rows.length) {
-        $('links-card').hidden = true;
-        return;
-      }
-      $('links-card').hidden = false;
+      if (links.partyUrl) rows.push(linkRow('Party invite', links.partyUrl, true));
+      if (links.adminUrl) rows.push(linkRow('Admin page', links.adminUrl, false));
+      $('links-card').hidden = !rows.length;
       $('links-list').innerHTML = rows.join('');
     }
 
-    function linkRow(label, url) {
+    function linkRow(label, url, shareable) {
       var safeUrl = escapeHtml(url);
-      var safeUrlAttr = escapeHtml(url).replace(/'/g, "&#39;");
+      var safeUrlAttr = escapeHtml(url).replace(/'/g, '&#39;');
+      var shareBtn = (shareable && canShare())
+        ? '<button class="icon-btn" type="button" onclick="shareLink(\'' + safeUrlAttr + '\')">Share</button>'
+        : '';
       return ''
         + '<div class="link-row">'
         +   '<span class="label">' + escapeHtml(label) + '</span>'
         +   '<a href="' + safeUrl + '" target="_blank" rel="noopener">' + safeUrl + '</a>'
-        +   '<button class="icon-btn copy-btn" type="button" onclick="copyToClipboard(\'' + safeUrlAttr + '\')">Copy</button>'
-        +   '<button class="icon-btn open-btn" type="button" onclick="window.open(\'' + safeUrlAttr + '\', \'_blank\')">Open</button>'
+        +   '<div class="link-actions">'
+        +     '<button class="icon-btn" type="button" onclick="copyToClipboard(\'' + safeUrlAttr + '\', \'Link copied\')">Copy</button>'
+        +     shareBtn
+        +     '<button class="icon-btn" type="button" onclick="window.open(\'' + safeUrlAttr + '\', \'_blank\')">Open</button>'
+        +   '</div>'
         + '</div>';
     }
 
-    function copyToClipboard(text) {
+    function shareLink(url) {
+      navigator.share({ url: url }).catch(function () {});
+    }
+
+    function copyToClipboard(text, msg) {
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(function () { toast('Link copied'); });
+          navigator.clipboard.writeText(text).then(
+            function () { toast(msg || 'Copied'); },
+            function () { legacyCopy(text, msg); }
+          );
           return;
         }
       } catch (_e) { /* fall through */ }
-      // Fallback for older browsers / sandboxed iframes
+      legacyCopy(text, msg);
+    }
+    function legacyCopy(text, msg) {
       var ta = document.createElement('textarea');
       ta.value = text;
       ta.style.position = 'fixed';
       ta.style.opacity = '0';
       document.body.appendChild(ta);
       ta.select();
-      try { document.execCommand('copy'); toast('Link copied'); }
+      try { document.execCommand('copy'); toast(msg || 'Copied'); }
       catch (_e) { toast('Copy failed — select & copy manually.'); }
       document.body.removeChild(ta);
     }
 
-    function invitationsTable(rows) {
-      var head = '<tr><th>Status</th><th>Name</th><th>Email</th><th>Sent</th><th>Opened</th><th>Clicked</th><th>RSVP</th></tr>';
-      var body = rows.map(function (r) {
-        var status, cls;
-        if (r.rsvp_id) { status = 'RSVPd'; cls = 'pill-rsvp'; }
-        else if (r.clicked_at) { status = 'Clicked'; cls = 'pill-clicked'; }
-        else if (r.opened_at)  { status = 'Opened';  cls = 'pill-opened'; }
-        else if (r.sent_at)    { status = 'Sent';    cls = 'pill-sent'; }
-        else { status = 'Pending'; cls = 'pill-pending'; }
-        return '<tr>'
-          + '<td><span class="pill ' + cls + '">' + status + '</span></td>'
-          + '<td>' + escapeHtml(r.name) + '</td>'
-          + '<td><span class="small">' + escapeHtml(r.email) + '</span></td>'
-          + '<td><span class="small">' + escapeHtml(fmtDate(r.sent_at)) + '</span></td>'
-          + '<td><span class="small">' + escapeHtml(fmtDate(r.opened_at)) + '</span></td>'
-          + '<td><span class="small">' + escapeHtml(fmtDate(r.clicked_at)) + '</span></td>'
-          + '<td>' + (r.rsvp_id ? '<span class="pill pill-yes">✓</span>' : '') + '</td>'
-          + '</tr>';
-      }).join('');
-      return '<table><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+    // ---- Guests ----
+
+    var GUEST_FILTERS = [
+      { key: 'all',     label: 'All' },
+      { key: 'pending', label: 'Pending' },
+      { key: 'sent',    label: 'Sent' },
+      { key: 'opened',  label: 'Opened' },
+      { key: 'clicked', label: 'Clicked' },
+      { key: 'rsvpd',   label: 'RSVPd' },
+    ];
+
+    function filteredGuests() {
+      return state.invitations.filter(function (r) {
+        return guestFilter === 'all' || guestStatus(r).key === guestFilter;
+      });
     }
 
-    function rsvpsTable(rows) {
-      var head = '<tr><th>Status</th><th>Parent(s)</th><th>Email</th><th>Adults</th><th>Kids</th><th>Allergies</th><th>Note</th><th>Submitted</th></tr>';
-      var body = rows.map(function (r) {
-        var cls = r.status === 'yes' ? 'pill-yes' : 'pill-no';
-        return '<tr>'
-          + '<td><span class="pill ' + cls + '">' + escapeHtml(r.status) + '</span></td>'
-          + '<td>' + escapeHtml(r.parent_names) + '</td>'
-          + '<td><span class="small">' + escapeHtml(r.email) + '</span></td>'
-          + '<td>' + r.adults_count + '</td>'
-          + '<td>' + r.kids_count + '</td>'
-          + '<td><span class="small">' + escapeHtml(r.allergy_notes) + '</span></td>'
-          + '<td><span class="small">' + escapeHtml(r.private_note) + '</span></td>'
-          + '<td><span class="small">' + escapeHtml(fmtDate(r.created_at)) + '</span></td>'
-          + '</tr>';
+    function setGuestFilter(key) { guestFilter = key; renderGuests(); }
+
+    function renderGuests() {
+      var d = state;
+      var pending = pendingInvites().length;
+      $('guests-send-card').hidden = pending === 0;
+      $('btn-send').textContent = '📨 Send ' + pending + ' pending invitation' + (pending === 1 ? '' : 's');
+
+      var counts = {};
+      d.invitations.forEach(function (r) {
+        var k = guestStatus(r).key;
+        counts[k] = (counts[k] || 0) + 1;
+      });
+      counts.all = d.invitations.length;
+      if (guestFilter !== 'all' && !counts[guestFilter]) guestFilter = 'all';
+
+      $('guest-chips').innerHTML = GUEST_FILTERS.map(function (f) {
+        var n = counts[f.key] || 0;
+        if (f.key !== 'all' && n === 0) return '';
+        return '<button class="chip' + (guestFilter === f.key ? ' active' : '') + '" onclick="setGuestFilter(\'' + f.key + '\')">'
+          + f.label + '<span class="count">' + n + '</span></button>';
       }).join('');
-      return '<table><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+
+      var rows = filteredGuests();
+      $('guest-actions').hidden = rows.length === 0;
+
+      if (!d.invitations.length) {
+        $('guest-list').innerHTML = '<div class="empty"><span class="emoji">📮</span>No guests yet. Add some above, then send invitations.</div>';
+        return;
+      }
+      if (!rows.length) {
+        $('guest-list').innerHTML = '<div class="empty">No guests match this filter.</div>';
+        return;
+      }
+      $('guest-list').innerHTML = rows.map(function (r) {
+        var st = guestStatus(r);
+        var timeline = [];
+        if (r.sent_at)    timeline.push('Sent ' + fmtDate(r.sent_at));
+        if (r.opened_at)  timeline.push('Opened ' + fmtDate(r.opened_at));
+        if (r.clicked_at) timeline.push('Clicked ' + fmtDate(r.clicked_at));
+        return '<div class="item">'
+          + '<div class="item-top">'
+          +   '<span class="item-name">' + (escapeHtml(r.name) || '<span style="color:var(--muted);font-weight:400;">(no name)</span>') + '</span>'
+          +   '<span class="pill ' + st.cls + '">' + st.label + '</span>'
+          + '</div>'
+          + '<div class="item-sub">' + escapeHtml(r.email) + '</div>'
+          + (timeline.length ? '<div class="item-meta">' + escapeHtml(timeline.join(' · ')) + '</div>' : '')
+          + (r.notes ? '<div class="item-note"><span class="k">Note</span>' + escapeHtml(r.notes) + '</div>' : '')
+          + '</div>';
+      }).join('');
     }
 
-    function notesTable(rows) {
-      var head = '<tr><th>Status</th><th>From</th><th>Wish</th><th></th></tr>';
-      var body = rows.map(function (n) {
-        var statusPill = n.is_approved
-          ? '<span class="pill pill-yes">Approved</span>'
-          : '<span class="pill pill-pending">Pending</span>';
-        var btn = n.is_approved
-          ? '<button class="btn-link" onclick="setApproved(\'' + n.id + '\', false)">hide</button>'
-          : '<button class="btn-link" onclick="setApproved(\'' + n.id + '\', true)">approve</button>';
-        return '<tr>'
-          + '<td>' + statusPill + '</td>'
-          + '<td>' + escapeHtml(n.display_name) + '</td>'
-          + '<td>' + escapeHtml(n.message) + '</td>'
-          + '<td>' + btn + '</td>'
-          + '</tr>';
-      }).join('');
-      return '<table><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+    function copyGuestEmails() {
+      var emails = filteredGuests().map(function (r) { return String(r.email || '').trim(); }).filter(Boolean);
+      if (!emails.length) { toast('No emails to copy.'); return; }
+      copyToClipboard(emails.join(', '), 'Copied ' + emails.length + ' email' + (emails.length === 1 ? '' : 's'));
     }
 
     function parseLine(line) {
-      var t = line.trim();
+      var t = line.trim().replace(/,$/, '').trim();
       if (!t) return null;
-      var m = t.match(/^(.+?)\s+([^\s@]+@[^\s@]+\.[^\s@]+)\s*$/);
-      if (m) return { name: m[1].trim(), email: m[2].trim() };
-      var em = t.match(/^([^\s@]+@[^\s@]+\.[^\s@]+)\s*$/);
+      var m = t.match(/^(.+?)[\s,]+([^\s@,]+@[^\s@,]+\.[^\s@,]+)\s*$/);
+      if (m) return { name: m[1].replace(/,+$/, '').trim(), email: m[2].trim() };
+      var em = t.match(/^([^\s@,]+@[^\s@,]+\.[^\s@,]+)$/);
       if (em) return { name: '', email: em[1].trim() };
       return null;
     }
 
     function addInvitees() {
-      var raw = $('invitee-input').value.split(/\r?\n/);
+      var raw = $('invitee-input').value.split(/\r?\n|,(?=\s*[^\s@]+@)/);
       var entries = raw.map(parseLine).filter(Boolean);
       if (!entries.length) { toast('Add at least one name + email per line.'); return; }
       setBusy(true);
@@ -496,7 +752,7 @@
     }
 
     function addSingle() {
-      var name  = $('single-name').value.trim();
+      var name = $('single-name').value.trim();
       var email = $('single-email').value.trim();
       if (!email) { toast('Email is required.'); return; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('Enter a valid email.'); return; }
@@ -519,7 +775,9 @@
     }
 
     function sendPending() {
-      if (!confirm('Send invitation emails to everyone who hasn’t been sent yet?')) return;
+      var n = pendingInvites().length;
+      if (!n) { toast('No pending invitations.'); return; }
+      if (!confirm('Send invitation emails to ' + n + ' guest' + (n === 1 ? '' : 's') + ' who haven’t been sent yet?')) return;
       setBusy(true);
       google.script.run
         .withSuccessHandler(function (res) {
@@ -531,11 +789,110 @@
         .adminSendPending();
     }
 
+    // ---- RSVPs ----
+
+    function filteredRsvps() {
+      return state.rsvps.details.filter(function (r) {
+        return rsvpFilter === 'all' || r.status === rsvpFilter;
+      });
+    }
+
+    function setRsvpFilter(key) { rsvpFilter = key; renderRsvps(); }
+
+    function renderRsvps() {
+      var d = state;
+      var chips = [
+        { key: 'all', label: 'All', count: d.rsvps.total },
+        { key: 'yes', label: 'Yes', count: d.rsvps.yes },
+        { key: 'no',  label: 'No',  count: d.rsvps.no },
+      ];
+      $('rsvp-chips').innerHTML = chips.map(function (c) {
+        return '<button class="chip' + (rsvpFilter === c.key ? ' active' : '') + '" onclick="setRsvpFilter(\'' + c.key + '\')">'
+          + c.label + '<span class="count">' + c.count + '</span></button>';
+      }).join('');
+
+      var rows = filteredRsvps();
+      $('rsvp-actions').hidden = rows.length === 0;
+
+      if (!d.rsvps.details.length) {
+        $('rsvp-list').innerHTML = '<div class="empty"><span class="emoji">🎈</span>No RSVPs yet. Share the party link!</div>';
+        return;
+      }
+      if (!rows.length) {
+        $('rsvp-list').innerHTML = '<div class="empty">No RSVPs match this filter.</div>';
+        return;
+      }
+      $('rsvp-list').innerHTML = rows.map(function (r) {
+        var cls = r.status === 'yes' ? 'pill-yes' : 'pill-no';
+        var who = r.status === 'yes'
+          ? '<span class="counts-inline">' + r.adults_count + ' adult' + (r.adults_count === 1 ? '' : 's') + ' · ' + r.kids_count + ' kid' + (r.kids_count === 1 ? '' : 's') + '</span>'
+          : '';
+        return '<div class="item">'
+          + '<div class="item-top">'
+          +   '<span class="item-name">' + escapeHtml(r.parent_names) + '</span>'
+          +   who
+          +   '<span class="pill ' + cls + '">' + escapeHtml(r.status) + '</span>'
+          + '</div>'
+          + '<div class="item-sub">' + escapeHtml(r.email) + '</div>'
+          + (r.allergy_notes ? '<div class="item-note"><span class="k">⚠️ Allergies</span>' + escapeHtml(r.allergy_notes) + '</div>' : '')
+          + (r.private_note ? '<div class="item-note"><span class="k">Note to host</span>' + escapeHtml(r.private_note) + '</div>' : '')
+          + (r.created_at ? '<div class="item-meta">Submitted ' + escapeHtml(fmtDate(r.created_at)) + '</div>' : '')
+          + '</div>';
+      }).join('');
+    }
+
+    function copyRsvpEmails() {
+      var seen = {};
+      var emails = filteredRsvps()
+        .map(function (r) { return String(r.email || '').trim(); })
+        .filter(function (e) {
+          if (!e || seen[e.toLowerCase()]) return false;
+          seen[e.toLowerCase()] = true;
+          return true;
+        });
+      if (!emails.length) { toast('No emails to copy.'); return; }
+      copyToClipboard(emails.join(', '), 'Copied ' + emails.length + ' email' + (emails.length === 1 ? '' : 's'));
+    }
+
+    // ---- Wishes ----
+
+    function renderWishes() {
+      var notes = state.notes;
+      if (!notes.length) {
+        $('wish-list').innerHTML = '<div class="empty"><span class="emoji">💌</span>No birthday wishes yet.</div>';
+        return;
+      }
+      $('wish-list').innerHTML = notes.map(function (n) {
+        var statusPill = n.is_approved
+          ? '<span class="pill pill-yes">Live</span>'
+          : '<span class="pill pill-pending">Hidden</span>';
+        var btn = n.is_approved
+          ? '<button class="btn-ghost" onclick="setApproved(\'' + escapeHtml(n.id) + '\', false)">Hide from page</button>'
+          : '<button class="btn-ghost" style="color:var(--ok);border-color:#bfe3cd;" onclick="setApproved(\'' + escapeHtml(n.id) + '\', true)">Show on page</button>';
+        return '<div class="item">'
+          + '<div class="item-top">'
+          +   '<span class="item-name">' + escapeHtml(n.display_name) + '</span>'
+          +   statusPill
+          + '</div>'
+          + '<div class="item-note">' + escapeHtml(n.message) + '</div>'
+          + (n.created_at ? '<div class="item-meta">' + escapeHtml(fmtDate(n.created_at)) + '</div>' : '')
+          + '<div class="item-actions">' + btn + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
     function setApproved(noteId, approved) {
       google.script.run
-        .withSuccessHandler(function () { toast(approved ? 'Approved' : 'Hidden'); load(); })
+        .withSuccessHandler(function () { toast(approved ? 'Wish is live' : 'Wish hidden'); load(); })
         .withFailureHandler(function (err) { toast('Error: ' + (err && err.message)); })
         .adminSetNoteApproved(noteId, approved);
+    }
+
+    function renderBadges() {
+      var pending = pendingInvites().length;
+      var b = $('badge-guests');
+      b.hidden = pending === 0;
+      b.textContent = pending;
     }
 
     load();
